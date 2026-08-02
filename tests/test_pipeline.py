@@ -1,5 +1,5 @@
 """
-Tests for the ShelfGuard-AgentX retail + procurement pipeline.
+Tests for the PayGuard-AgentX retail + procurement pipeline.
 
 Covers the DQ tool (retail + invoice paths), the HMAC audit module, each agent's
 logic in isolation, and a full end-to-end pipeline run. No LLM key or heavy deps
@@ -132,3 +132,30 @@ def test_full_pipeline_runs_and_logs():
     state = run_pipeline({"sales_raw": sales, "inventory_raw": inv, "invoices_raw": []})
     assert "logs" in state
     assert len(state["logs"]) >= 5  # one log line per agent
+
+
+# --- Phase 2: LLM hook + evaluation harness --------------------------------
+
+def test_llm_offline_fallback_is_not_live():
+    from src.core import llm
+    # No PAYGUARD_LLM_MODEL configured in tests -> offline, deterministic path.
+    assert llm.is_live() is False
+
+
+def test_llm_hook_enriches_dispute_when_live(monkeypatch):
+    from src.core import llm
+    from src.agents.pipeline import payment_auditor
+    monkeypatch.setattr(llm, "is_live", lambda: True)
+    monkeypatch.setattr(llm, "complete", lambda *a, **k: "LLM rationale: supplier overbilled")
+    po = {"po_id": "PO_1", "total_estimated_cost": 100.0}
+    inv = {"invoice_id": "I9", "supplier_id": "SUP_A", "sku": "K", "amount": 500.0, "po_id": "PO_1"}
+    state = payment_auditor({"valid_invoices": [inv], "po_draft": po})
+    assert "LLM rationale" in state["dispute_drafts"][0]["reason"]
+
+
+def test_eval_harness_produces_metrics():
+    from evaluation.run_eval import evaluate
+    r = evaluate()
+    assert 0.0 <= r["restock"]["accuracy"] <= 1.0
+    assert 0.0 <= r["invoice"]["accuracy"] <= 1.0
+    assert r["restock"]["n"] >= 20

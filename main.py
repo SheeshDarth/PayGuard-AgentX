@@ -1,5 +1,5 @@
 """
-ShelfGuard-AgentX -- demo entry point.
+PayGuard-AgentX -- demo entry point.
 
 Runs the full multi-agent pipeline end-to-end on a synthetic retail + procurement
 stream. Fully deterministic: no LLM key or network required. Demonstrates the closed
@@ -14,7 +14,7 @@ from src.core import audit
 
 def main():
     print("=" * 74)
-    print("ShelfGuard-AgentX -- Retail Ops + Procurement-Integrity Copilot")
+    print("PayGuard-AgentX -- Retail Ops + Procurement-Integrity Copilot")
     print("=" * 74)
 
     # --- Build a synthetic inbound stream ---------------------------------

@@ -1,5 +1,5 @@
 """
-ShelfGuard-AgentX multi-agent pipeline.
+PayGuard-AgentX multi-agent pipeline.
 
 Each agent is a pure function: state(dict) -> state(dict). Keeping the agent logic
 pure makes it unit-testable with no LLM key and no heavy dependencies. The place to
@@ -21,9 +21,10 @@ Agent lineage:
 from typing import TypedDict, List, Optional
 from src.core.dq_engine import PayGuardDQEngine
 from src.core import audit
+from src.core import llm
 
 
-class ShelfGuardState(TypedDict, total=False):
+class AgentState(TypedDict, total=False):
     sales_raw: List[str]
     inventory_raw: List[str]
     invoices_raw: List[str]
@@ -32,6 +33,7 @@ class ShelfGuardState(TypedDict, total=False):
     valid_invoices: List[dict]
     rejected: List[dict]
     demand_forecast: dict
+    forecast_note: str
     stock_alerts: List[dict]
     po_draft: Optional[dict]
     payment_flags: List[dict]
@@ -80,8 +82,13 @@ def demand_forecaster(state: dict) -> dict:
     for s in state.get("valid_sales", []):
         key = f"{s['store_id']}|{s['sku']}"
         forecast[key] = forecast.get(key, 0) + int(s["units_sold"])
-    # LLM-HOOK: replace this sum-over-window with a statistical or model-based forecast.
+    # LLM-HOOK: when a live model is configured, attach a natural-language demand note.
     state["demand_forecast"] = forecast
+    if llm.is_live():
+        state["forecast_note"] = llm.complete(
+            "In one sentence, summarise near-term retail demand from these projected "
+            "per-SKU units: " + str(forecast) + ".",
+            system="You are a concise retail demand analyst.")
     _log(state, f"Demand-Forecaster: projected demand for {len(forecast)} store/SKU pair(s).")
     return state
 
@@ -162,6 +169,12 @@ def payment_auditor(state: dict, tolerance: float = 0.02) -> dict:
                              "po_id": po["po_id"], "reason": "Invoice amount exceeds PO estimate beyond tolerance",
                              "claimed_amount": inv["amount"], "expected_amount": expected,
                              "proposed_verdict": "NEEDS_REVIEW", "requires_human_approval": True})
+            if llm.is_live():
+                disputes[-1]["reason"] = llm.complete(
+                    "Draft a one-sentence procurement dispute rationale. Invoice bills "
+                    + str(inv["amount"]) + " for " + inv["sku"] + " but the PO estimate was "
+                    + str(expected) + ".",
+                    system="You are a concise, factual procurement dispute assistant.")
             continue
         flags.append({"invoice_id": inv["invoice_id"], "flag_type": "CLEAN", "severity": "NONE",
                       "description": "Invoice passed payment audit."})
@@ -191,7 +204,7 @@ def build_graph():
     Imported lazily so the package and its tests run without langgraph installed.
     """
     from langgraph.graph import StateGraph, END
-    g = StateGraph(ShelfGuardState)
+    g = StateGraph(AgentState)
     g.add_node("dq_sentinel", dq_sentinel)
     g.add_node("demand_forecaster", demand_forecaster)
     g.add_node("stock_watcher", stock_watcher)

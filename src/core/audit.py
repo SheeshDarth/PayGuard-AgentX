@@ -1,12 +1,12 @@
 """
-Tamper-evident audit signing for ShelfGuard-AgentX.
+Tamper-evident audit signing for PayGuard-AgentX.
 
 Uses HMAC-SHA256 over a canonical JSON body with a server-held secret key.
 This is a real keyed integrity control — NOT a bare self-supplied SHA-256 of the
 same payload (the weakness flagged in the PayGuard-AgentX council review). An
 attacker who controls the payload cannot forge a valid signature without the key.
 
-Key resolution: SHELFGUARD_AUDIT_KEY env var, else a clearly-labelled dev demo key.
+Key resolution: PAYGUARD_AUDIT_KEY env var, else a clearly-labelled dev demo key.
 """
 
 import hashlib
@@ -16,11 +16,11 @@ import os
 from datetime import datetime, timezone
 from src.models.schemas import EvidenceDossier
 
-DEFAULT_DEMO_KEY = "shelfguard-dev-demo-key-change-me"
+DEFAULT_DEMO_KEY = "payguard-dev-demo-key-change-me"
 
 
 def _secret(key: str | None = None) -> bytes:
-    return (key or os.getenv("SHELFGUARD_AUDIT_KEY", DEFAULT_DEMO_KEY)).encode("utf-8")
+    return (key or os.getenv("PAYGUARD_AUDIT_KEY", DEFAULT_DEMO_KEY)).encode("utf-8")
 
 
 def _canonical(payload: dict) -> bytes:

@@ -1,31 +1,31 @@
-# 🛡️🛒 PayGuard-AgentX → **ShelfGuard-AgentX**
+# 🛡️🛒 PayGuard-AgentX
 
 > **Agentic Retail Operations + Procurement-Integrity Copilot**
 > A multi-agent system that decides *what a store should restock* — and *guards the data and money* around every purchase order it creates.
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Orchestration: LangGraph](https://img.shields.io/badge/Orchestration-LangGraph-orange.svg)](https://github.com/langchain-ai/langgraph)
-[![Status: Phase 1 — scaffolding runs](https://img.shields.io/badge/status-Phase%201%20(runs)-green.svg)](docs/ROADMAP.md)
+[![Status: Phase 2 — partial](https://img.shields.io/badge/status-Phase%202%20(partial)-green.svg)](docs/ROADMAP.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
 
 ## What this is
 
-`ShelfGuard-AgentX` fuses two ideas into one project:
+`PayGuard-AgentX` fuses two ideas into one project:
 
 - **ShelfSense** — a retail copilot that reads sales + inventory and proposes restock quantities, prices, and purchase orders.
 - **PayGuard-AgentX** — a multi-agent financial *data-quality + fraud + dispute* engine.
 
 They meet at one natural loop: the **purchase order → supplier invoice → payment** cycle. ShelfSense decides *what to buy*; PayGuard *guards the data going in and audits the money coming back*. The result is a single agentic system where the deterministic PayGuardDQ engine is a **tool** the agents call — not a passive validator — which is what makes the loop genuinely *agentic*.
 
-> **Honest status:** Phase 1 is built and runs end-to-end (deterministic, no API key needed). The LLM reasoning inside the agents, the RAG/regulatory layer, and the dashboard are planned — see [docs/ROADMAP.md](docs/ROADMAP.md). Nothing here is production-audited; the compliance/fraud language describes the *design target*, not a certified system.
+> **Honest status:** Phase 1 is built and runs end-to-end (deterministic, no API key needed). The LLM reasoning inside the agents, the RAG/regulatory layer, and the dashboard are planned — see [docs/ROADMAP.md](docs/ROADMAP.md). Phase 2 has begun: an LLM access layer with an offline fallback (`src/core/llm.py`) now backs the agents' `LLM-HOOK` points, and an evaluation harness (`evaluation/run_eval.py`) reports a baseline. Nothing here is production-audited; the compliance/fraud language describes the *design target*, not a certified system.
 
 ---
 
 ## How the two projects map
 
-| PayGuard-AgentX agent (financial origin) | Role in ShelfGuard (retail + procurement) | Built in Phase 1? |
+| PayGuard-AgentX agent (financial origin) | Role in PayGuard-AgentX (retail + procurement) | Built in Phase 1? |
 |---|---|---|
 | **DQ-Sentinel** | Validates every inbound record — POS sales, inventory snapshots, supplier invoices — via the PayGuardDQ tool | ✅ Yes |
 | **Demand-Forecaster** *(ShelfSense)* | Projects near-term demand per store / SKU from validated sales | ✅ Yes (heuristic) |
@@ -70,7 +70,8 @@ source venv/bin/activate           # Windows: venv\Scripts\activate
 pip install -r requirements.txt    # core scaffolding needs only pydantic
 
 python main.py                     # run the end-to-end demo
-pytest -q                          # run the test suite (19 tests)
+pytest -q                          # run the test suite (22 tests)
+python evaluation/run_eval.py      # print the evaluation baseline metrics
 ```
 
 `main.py` prints the full loop: which records DQ-Sentinel rejected, the human-approval-gated purchase order, the supplier over-billing the Payment-Auditor caught, the dispute it drafted, and the verified signed dossiers.

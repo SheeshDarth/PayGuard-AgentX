@@ -1,6 +1,6 @@
-"""ShelfGuard-AgentX agent pipeline."""
+"""PayGuard-AgentX agent pipeline."""
 from src.agents.pipeline import (
-    ShelfGuardState,
+    AgentState,
     dq_sentinel,
     demand_forecaster,
     stock_watcher,

@@ -1,6 +1,6 @@
-# 📑 Product Requirements Document (PRD) — ShelfGuard-AgentX
+# 📑 Product Requirements Document (PRD) — PayGuard-AgentX
 
-> **Project:** `ShelfGuard-AgentX` (repo: `PayGuard-AgentX`)
+> **Project:** `PayGuard-AgentX` (repo: `PayGuard-AgentX`)
 > **Version:** 2.0 — retail + procurement-integrity pivot
 > **Team:** Siddharth ([@SheeshDarth](https://github.com/SheeshDarth)), Revanth ([@Revanthm2027](https://github.com/Revanthm2027)), Vishnu ([@vishnu-k-dev](https://github.com/vishnu-k-dev))
 
@@ -8,7 +8,7 @@
 
 ## 1. Vision
 
-`ShelfGuard-AgentX` is a multi-agent copilot for small retail / dark-store operations. It reads point-of-sale and inventory data, decides what to restock, drafts purchase orders for human approval, and then **guards the procurement money trail** — validating supplier invoices against the very purchase orders it generated, catching duplicate or inflated billing, and drafting disputes. Every consequential action is recorded in a tamper-evident, signed audit dossier.
+`PayGuard-AgentX` is a multi-agent copilot for small retail / dark-store operations. It reads point-of-sale and inventory data, decides what to restock, drafts purchase orders for human approval, and then **guards the procurement money trail** — validating supplier invoices against the very purchase orders it generated, catching duplicate or inflated billing, and drafting disputes. Every consequential action is recorded in a tamper-evident, signed audit dossier.
 
 It fuses two prior concepts: **ShelfSense** (retail restock/pricing copilot) and **PayGuard-AgentX** (financial data-quality + fraud + dispute engine). The bridge between them is the purchase-order → invoice → payment loop.
 
@@ -22,7 +22,7 @@ Small retailers and dark stores lose margin to three everyday failures:
 2. **Dirty operational data** — POS exports and supplier feeds contain malformed records, wrong currencies, and corrupted fields that quietly break naive automation.
 3. **Supplier billing leakage** — duplicate invoices, quantities that do not match the purchase order, and price creep slip through because no one reconciles every invoice against its PO.
 
-A single small team cannot watch all three continuously. ShelfGuard puts a guarded, semi-autonomous agent loop on the job, with humans approving the decisions that spend money.
+A single small team cannot watch all three continuously. PayGuard-AgentX puts a guarded, semi-autonomous agent loop on the job, with humans approving the decisions that spend money.
 
 ---
 

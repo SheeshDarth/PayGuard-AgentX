@@ -1,7 +1,7 @@
-# 🛠️ Technical Requirements Document (TRD) — ShelfGuard-AgentX
+# 🛠️ Technical Requirements Document (TRD) — PayGuard-AgentX
 
 > **System architecture, schemas & technical specification**
-> Repo: `PayGuard-AgentX` · Concept: `ShelfGuard-AgentX`
+> Repo: `PayGuard-AgentX` · Concept: `PayGuard-AgentX`
 
 ---
 
@@ -28,7 +28,7 @@ src/
   models/schemas.py         # Pydantic models
   core/dq_engine.py         # PayGuardDQEngine — deterministic validation TOOL
   core/audit.py             # sign / verify / build_dossier (HMAC-SHA256)
-  agents/pipeline.py        # ShelfGuardState + 5 agents + run_pipeline + build_graph
+  agents/pipeline.py        # AgentState + 5 agents + run_pipeline + build_graph
   utils/retail_simulator.py # synthetic record generator
 main.py                     # demo entry point
 ```
@@ -81,7 +81,7 @@ class EvidenceDossier(BaseModel):
 ## 4. Agent state machine
 
 ```python
-class ShelfGuardState(TypedDict, total=False):
+class AgentState(TypedDict, total=False):
     sales_raw / inventory_raw / invoices_raw: list[str]   # inbound
     valid_sales / valid_inventory / valid_invoices: list[dict]
     rejected: list[dict]
@@ -116,7 +116,7 @@ Each node is a pure `state -> state` function, so the graph is testable without 
 
 ## 6. Audit integrity design
 
-The prior PayGuard design compared a SHA-256 of a payload against a checksum field on the *same* payload — spoofable by anyone who controls the payload. ShelfGuard replaces this for evidence signing with **HMAC-SHA256 over a canonical JSON body using a server-held secret** (`SHELFGUARD_AUDIT_KEY`):
+The prior PayGuard design compared a SHA-256 of a payload against a checksum field on the *same* payload — spoofable by anyone who controls the payload. PayGuard-AgentX replaces this for evidence signing with **HMAC-SHA256 over a canonical JSON body using a server-held secret** (`PAYGUARD_AUDIT_KEY`):
 
 ```python
 sign(payload)   -> hmac.new(secret, canonical_json(payload), sha256).hexdigest()

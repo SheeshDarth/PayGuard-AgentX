@@ -1,6 +1,6 @@
-# 📅 Implementation Roadmap — ShelfGuard-AgentX
+# 📅 Implementation Roadmap — PayGuard-AgentX
 
-> Repo `PayGuard-AgentX` · concept `ShelfGuard-AgentX` · team of 3 · one-semester scope
+> Repo `PayGuard-AgentX` · concept `PayGuard-AgentX` · team of 3 · one-semester scope
 > Deliberately scoped below a research-grade capstone: a working guarded agent loop first, LLM depth and UI second.
 
 ---
@@ -15,10 +15,13 @@
 - [x] End-to-end demo (`main.py`) + 19 passing tests
 - **Deliverable:** `python main.py` runs the full loop — DQ quarantine → demand → stock alert → PO draft (HITL) → invoice audit → dispute draft → signed dossiers.
 
-## 🟡 Phase 2 — Real agentic reasoning (Weeks 3–4)
+## 🟡 Phase 2 — Real agentic reasoning (Weeks 3–4) — PARTIALLY DONE
+
+> Landed: LLM access layer with offline fallback (`src/core/llm.py`), `.env.example`, and a labeled evaluation harness (`evaluation/run_eval.py`). Remaining: validate against a live LLM key and add statistical seasonality.
+
 
 - [ ] Wire an LLM (Gemini 1.5 Flash / LiteLLM) at each `LLM-HOOK`: demand explanation, ambiguous-record triage, dispute rationale drafting
-- [ ] Secrets/config via `python-dotenv` (`.env.example`, `SHELFGUARD_AUDIT_KEY`, LLM keys)
+- [ ] Secrets/config via `python-dotenv` (`.env.example`, `PAYGUARD_AUDIT_KEY`, LLM keys)
 - [ ] Statistical demand forecast (moving average / simple seasonality with `pandas`) alongside the LLM
 - [ ] Build a ~50-case labeled evaluation set; measure restock precision/recall and invoice-flag accuracy
 - **Deliverable:** agents that *reason*, plus a metrics table proving they beat the heuristic baseline.

@@ -1,5 +1,5 @@
 """
-Synthetic retail + procurement stream generator for ShelfGuard-AgentX.
+Synthetic retail + procurement stream generator for PayGuard-AgentX.
 
 Produces clean and deliberately-broken JSON records for the three inbound streams
 the DQ-Sentinel guards: POS sales, inventory snapshots, and supplier invoices.

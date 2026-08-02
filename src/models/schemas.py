@@ -1,5 +1,5 @@
 """
-ShelfGuard-AgentX Core Data Schemas (Pydantic v2)
+PayGuard-AgentX Core Data Schemas (Pydantic v2)
 
 Two families of models:
   1. Retail operations  — SalesRecord, InventorySnapshot, RestockRecommendation, PurchaseOrderDraft

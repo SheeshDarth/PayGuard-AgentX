@@ -2,7 +2,7 @@
 PayGuardDQ Data Quality Middleware Engine
 
 Deterministic field validation & payload integrity verification (0 LLM tokens consumed).
-In ShelfGuard-AgentX this engine is used as a TOOL that the DQ-Sentinel agent calls to
+In PayGuard-AgentX this engine is used as a TOOL that the DQ-Sentinel agent calls to
 gate every inbound record — retail sales, inventory snapshots, and supplier invoices —
 before any downstream agent is allowed to reason over it.
 
