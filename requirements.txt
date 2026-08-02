@@ -1,0 +1,23 @@
+# Core Agentic & AI Frameworks
+langgraph>=0.1.0
+langchain>=0.2.0
+langchain-google-genai>=1.0.0
+litellm>=1.40.0
+google-generativeai>=0.7.0
+
+# Data Quality & Processing
+pydantic>=2.7.0
+pandas>=2.2.0
+numpy>=1.26.0
+
+# Vector DB & RAG
+chromadb>=0.5.0
+
+# Dashboard & Visualization
+streamlit>=1.35.0
+networkx>=3.3
+
+# Utilities
+python-dotenv>=1.0.1
+rich>=13.7.0
+pytest>=8.0.0
