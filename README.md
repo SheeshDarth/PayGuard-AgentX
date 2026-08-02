@@ -5,7 +5,7 @@
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Orchestration: LangGraph](https://img.shields.io/badge/Orchestration-LangGraph-orange.svg)](https://github.com/langchain-ai/langgraph)
-[![Status: Phase 2 — partial](https://img.shields.io/badge/status-Phase%202%20(partial)-green.svg)](docs/ROADMAP.md)
+[![Status: Scale-up Week 1](https://img.shields.io/badge/status-scale--up%20Week%201-blue.svg)](docs/ROADMAP.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
@@ -93,6 +93,23 @@ docs/                      # PRD, TRD, ROADMAP
 ```
 
 ---
+
+## Technology decisions
+
+Local-first for a 6GB-VRAM laptop on mobile data; every component degrades to an offline fallback.
+
+| Component | Choice | Why |
+|---|---|---|
+| Orchestration | LangGraph + langgraph-supervisor | already in repo; supervisor gives dynamic routing, not a fixed pipeline |
+| Local LLM | Ollama, phi4-mini | strong tool/JSON reliability that fits 6GB with headroom |
+| Relational | SQLite (stdlib) | zero-setup vendor/store/SKU/PO metadata; also the LangGraph checkpoint backend |
+| Graph | Kuzu (embedded, Cypher) | supplier/dispute fraud-ring queries, no server |
+| Vector / docs | Chroma (embedded) | regulatory_docs RAG + case_history long-term memory |
+| Embeddings | MiniLM, CPU-only | keeps all VRAM for the reasoning LLM |
+| Tools | MCP (custom tools) | validation / relational / graph / doc sources as real MCP tools |
+| Dashboard | Streamlit | fast interactive demo (trace, HITL queue, HMAC verify) |
+
+See docs/ARCHITECTURE.md for the single-model VRAM tradeoff.
 
 ## Documentation
 

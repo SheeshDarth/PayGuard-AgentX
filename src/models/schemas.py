@@ -128,3 +128,48 @@ class EvidenceDossier(BaseModel):
     payload: dict = Field(default_factory=dict, description="Canonical body that was signed")
     signature: str = Field(..., description="HMAC-SHA256 hex digest over payload")
     signature_algo: Literal['HMAC-SHA256'] = 'HMAC-SHA256'
+
+
+# ---------------------------------------------------------------------------
+# Agentic layer (scale-up) -- confidence, negotiation, critics, trace
+# ---------------------------------------------------------------------------
+
+class AgentDecision(BaseModel):
+    """A consequential agent output carrying a calibrated confidence."""
+    agent: str
+    subject_id: str
+    summary: str
+    confidence: float = Field(..., ge=0.0, le=1.0)
+    requires_human_approval: bool = True
+
+
+class NegotiationTurn(BaseModel):
+    agent: str
+    round: int = Field(..., ge=1)
+    position: str
+    rationale: str
+
+
+class NegotiationTranscript(BaseModel):
+    topic: str
+    turns: List[NegotiationTurn] = Field(default_factory=list)
+    rounds: int = 0
+    resolution: str = ""
+
+
+class CriticReview(BaseModel):
+    critic: str
+    target_id: str
+    verdict: Literal['APPROVE', 'REVISE']
+    issues: List[str] = Field(default_factory=list)
+    revised: bool = False
+
+
+class TraceEvent(BaseModel):
+    run_id: str
+    step: int
+    agent: str
+    action: str          # 'tool_call' | 'decision' | 'memory_read' | 'negotiation'
+    detail: str
+    confidence: Optional[float] = None
+    timestamp: str

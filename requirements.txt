@@ -27,3 +27,13 @@ google-generativeai>=0.7.0
 # Phase 4 — War-Room dashboard:
 #   streamlit>=1.35.0
 #   networkx>=3.3
+
+# -- Scale-up (local-first; optional -- offline fallbacks run without these) --
+# ollama app + 'ollama pull phi4-mini'   # local LLM runtime
+# kuzu>=0.4.0                            # embedded graph DB (Cypher)
+# chromadb>=0.5.0                        # embedded vector store
+# sentence-transformers>=3.0.0           # CPU MiniLM embeddings
+# langgraph-supervisor                   # dynamic multi-agent routing
+# langgraph-checkpoint-sqlite            # short-term run memory
+# mcp>=1.0.0                             # MCP tool server
+# streamlit>=1.35.0                      # dashboard
