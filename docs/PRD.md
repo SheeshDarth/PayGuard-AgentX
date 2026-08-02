@@ -1,50 +1,83 @@
-# 📑 Product Requirements Document (PRD) — PayGuard-AgentX
+# 📑 Product Requirements Document (PRD) — ShelfGuard-AgentX
 
-> **Project Name:** `PayGuard-AgentX`  
-> **Version:** 1.0  
-> **Author:** Siddharth ([github.com/SheeshDarth](https://github.com/SheeshDarth))  
-
----
-
-## 1. Vision & Core Value Proposition
-
-`PayGuard-AgentX` is an enterprise multi-agent platform designed to monitor, audit, and self-heal financial payment pipelines in real time. It reduces payment data processing errors, flags temporal fraud velocity, and automates chargeback dispute arbitration.
+> **Project:** `ShelfGuard-AgentX` (repo: `PayGuard-AgentX`)
+> **Version:** 2.0 — retail + procurement-integrity pivot
+> **Team:** Siddharth ([@SheeshDarth](https://github.com/SheeshDarth)), Revanth ([@Revanthm2027](https://github.com/Revanthm2027)), Vishnu ([@vishnu-k-dev](https://github.com/vishnu-k-dev))
 
 ---
 
-## 2. Target Personas
+## 1. Vision
 
-1. **Financial Fraud Analyst:** Needs real-time anomaly scores and temporal velocity tracking.
-2. **Compliance Officer:** Needs instant regulatory clause citations (PCI-DSS, AML, FATF) attached to flagged payloads.
-3. **Data/DevOps Engineer:** Requires automated self-healing patches when payment APIs drift or break.
+`ShelfGuard-AgentX` is a multi-agent copilot for small retail / dark-store operations. It reads point-of-sale and inventory data, decides what to restock, drafts purchase orders for human approval, and then **guards the procurement money trail** — validating supplier invoices against the very purchase orders it generated, catching duplicate or inflated billing, and drafting disputes. Every consequential action is recorded in a tamper-evident, signed audit dossier.
+
+It fuses two prior concepts: **ShelfSense** (retail restock/pricing copilot) and **PayGuard-AgentX** (financial data-quality + fraud + dispute engine). The bridge between them is the purchase-order → invoice → payment loop.
 
 ---
 
-## 3. Product Features & Scope
+## 2. Problem
 
-### Feature Group 1: Data Ingestion & Sanitization (`PayGuardDQ`)
-- Real-time JSON/XML payment payload validation.
-- Deterministic checks for missing keys, malformed timestamps, out-of-bound amounts, and currency mismatches.
+Small retailers and dark stores lose margin to three everyday failures:
 
-### Feature Group 2: Agentic Anomaly Triage (`DQ-SentinelAgent`)
-- Autonomous classification of anomalies: `DATA_CORRUPTION`, `FRAUD_VELOCITY`, or `REGULATORY_VIOLATION`.
-- State-graph routing to specialized worker agents.
+1. **Stockouts and overstock** — manual reorder decisions lag demand; popular SKUs sell out while slow ones tie up cash.
+2. **Dirty operational data** — POS exports and supplier feeds contain malformed records, wrong currencies, and corrupted fields that quietly break naive automation.
+3. **Supplier billing leakage** — duplicate invoices, quantities that do not match the purchase order, and price creep slip through because no one reconciles every invoice against its PO.
 
-### Feature Group 3: Temporal Velocity Forensics (`OriginX-T Lite`)
-- 30-day and 90-day velocity metrics per account.
-- Detection of sleeper account activation and volume spikes.
+A single small team cannot watch all three continuously. ShelfGuard puts a guarded, semi-autonomous agent loop on the job, with humans approving the decisions that spend money.
 
-### Feature Group 4: Regulatory Policy RAG (`NirmiqResearchOS RAG`)
-- ChromaDB vector store containing banking regulations (PCI-DSS 4.0, AML directives).
-- Automatic citation extraction for non-compliant transactions.
+---
 
-### Feature Group 5: Self-Healing Code Repair (`NirmiqCodeSensei AST`)
-- AST inspection of broken payload structures.
-- Sandboxed Python patch generation and execution test loop.
+## 3. Target personas
 
-### Feature Group 6: Autonomous Dispute Settlement & Evidence Engine
-- Two-agent chargeback arbitration (Merchant Agent vs Bank Agent).
-- SHA-256 cryptographically signed PDF/Markdown evidence dossiers.
+- **Store Operations Manager** — wants timely, explainable restock suggestions, not a black box; approves purchase orders.
+- **Procurement / Finance Officer** — wants every supplier invoice reconciled against its PO, with duplicates and mismatches flagged and a signed audit trail for each.
+- **Data / Ops Engineer** — wants dirty inbound records caught and quarantined before any agent acts on them.
 
-### Feature Group 7: Incident War-Room Dashboard
-- Real-time Streamlit web interface with live streaming ticker, agent thought logs, and Human-in-the-Loop overrides.
+---
+
+## 4. Product epics & features
+
+### EPIC 1 — Guarded ingestion (DQ-Sentinel) ✅ Phase 1
+- **FEAT-1.1** Validate POS sales, inventory snapshots, and supplier invoices via the deterministic PayGuardDQ tool (required fields, positive quantities/amounts, supported currency, invoice checksum).
+- **FEAT-1.2** Quarantine rejected records with a human-readable reason; only clean records reach downstream agents.
+
+### EPIC 2 — Demand & stock intelligence (Demand-Forecaster, Stock-Watcher) ✅ Phase 1
+- **FEAT-2.1** Project near-term demand per store/SKU from validated sales.
+- **FEAT-2.2** Flag SKUs below their reorder point or projected demand, with the shortfall quantified.
+
+### EPIC 3 — Restock planning with human approval (Ops-Planner) ✅ Phase 1
+- **FEAT-3.1** Assemble stock alerts into a purchase-order draft with per-line rationale and an estimated cost.
+- **FEAT-3.2** Mark every PO `requires_human_approval = True`; nothing is "sent" autonomously.
+
+### EPIC 4 — Procurement integrity (Payment-Auditor) ✅ Phase 1
+- **FEAT-4.1** Reconcile each returning supplier invoice against the originating PO.
+- **FEAT-4.2** Detect duplicate billing and PO-amount mismatches; draft a dispute (human review required) when a mismatch exceeds tolerance.
+
+### EPIC 5 — Tamper-evident audit trail ✅ Phase 1
+- **FEAT-5.1** Emit an HMAC-SHA256 signed evidence dossier for each PO draft and dispute draft, verifiable with the server key.
+
+### EPIC 6 — LLM reasoning upgrade 🔜 Phase 2
+- **FEAT-6.1** Replace heuristic forecasting/routing with an LLM (Gemini/LiteLLM) at the marked `LLM-HOOK` points, keeping the same agent interfaces.
+
+### EPIC 7 — Regulatory & self-healing 🔜 Phase 3
+- **FEAT-7.1** RAG check of invoices against supplier-contract / tax rules (Regulatory-Auditor).
+- **FEAT-7.2** Suggest (never auto-apply) a parser patch when a supplier changes invoice format (Self-Healing-Repair).
+
+### EPIC 8 — War-Room dashboard 🔜 Phase 4
+- **FEAT-8.1** Streamlit dashboard: live record stream, agent log, pending PO/dispute approvals, and one-click approve/reject.
+
+---
+
+## 5. Out of scope (this project)
+
+- Real payment execution or fund transfer — the system drafts and audits, humans approve and pay.
+- Any claim of PCI-DSS / regulatory certification — the compliance framing is a design target, not an audited guarantee.
+- Real customer or cardholder data — all streams are synthetic.
+
+---
+
+## 6. Success metrics
+
+- **Data quality:** ≥ 99% of malformed synthetic records correctly quarantined.
+- **Restock quality:** on a labeled test set, agent restock suggestions vs. actual next-period sales (precision/recall on "should reorder").
+- **Integrity:** 100% of duplicate / mismatched invoices flagged on the test set; 0 forged dossiers pass verification.
+- **Human-in-the-loop:** 100% of money-spending actions gated by human approval.

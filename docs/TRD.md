@@ -1,84 +1,134 @@
-# 🛠️ Technical Requirements Document (TRD) — PayGuard-AgentX
+# 🛠️ Technical Requirements Document (TRD) — ShelfGuard-AgentX
 
-> **System Architecture, Schemas, & Technical Specifications**  
-> **Project Name:** `PayGuard-AgentX`  
-
----
-
-## 1. System Architecture & Tech Stack
-
-- **Language:** Python 3.11+
-- **Agent Framework:** `LangGraph` + `LangChain`
-- **LLM Provider:** Google Gemini 1.5 Flash / LiteLLM / GPT-4o-mini
-- **Validation Engine:** Pydantic v2 + Pandas
-- **Vector DB:** ChromaDB
-- **Dashboard:** Streamlit
-- **Hashing & Security:** SHA-256 (`hashlib`)
+> **System architecture, schemas & technical specification**
+> Repo: `PayGuard-AgentX` · Concept: `ShelfGuard-AgentX`
 
 ---
 
-## 2. Core Pydantic Data Models
+## 1. Tech stack
 
+| Component | Choice | Status |
+|---|---|---|
+| Language | Python 3.11+ | Active |
+| Data validation | Pydantic v2 | Active |
+| Agent orchestration | LangGraph (`StateGraph`) | Active (optional import; sequential fallback) |
+| Audit integrity | `hmac` + `hashlib` (HMAC-SHA256) | Active |
+| LLM reasoning | Gemini 1.5 Flash / LiteLLM (at `LLM-HOOK` points) | Phase 2 |
+| Regulatory RAG | ChromaDB | Phase 3 |
+| Dashboard | Streamlit | Phase 4 |
+
+The scaffolding runs on **pydantic alone**. `langgraph` is needed only for `build_graph()`; `run_pipeline()` is a dependency-free sequential runner with identical node order.
+
+---
+
+## 2. Module map
+
+```
+src/
+  models/schemas.py         # Pydantic models
+  core/dq_engine.py         # PayGuardDQEngine — deterministic validation TOOL
+  core/audit.py             # sign / verify / build_dossier (HMAC-SHA256)
+  agents/pipeline.py        # ShelfGuardState + 5 agents + run_pipeline + build_graph
+  utils/retail_simulator.py # synthetic record generator
+main.py                     # demo entry point
+```
+
+---
+
+## 3. Core data schemas (Pydantic v2)
+
+**Retail**
 ```python
-from pydantic import BaseModel, Field
-from typing import Optional, List
+class SalesRecord(BaseModel):
+    record_id: str; sku: str; store_id: str
+    units_sold: int          # DQ: must be > 0
+    unit_price: float        # DQ: must be > 0
+    currency: str; timestamp: str
 
-class TransactionPayload(BaseModel):
-    transaction_id: str
-    sender_account: str
-    receiver_account: str
-    amount: float
-    currency: str
+class InventorySnapshot(BaseModel):
+    record_id: str; sku: str; store_id: str
+    on_hand: int             # DQ: >= 0
+    reorder_point: int
     timestamp: str
-    payload_raw: str
-    checksum: Optional[str] = None
 
-class AnomalyDiagnosis(BaseModel):
-    transaction_id: str
-    anomaly_type: str  # 'DATA_CORRUPTION' | 'FRAUD_VELOCITY' | 'REGULATORY_VIOLATION'
-    severity: str      # 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
-    description: str
-    recommended_agent: str
+class PurchaseOrderDraft(BaseModel):
+    po_id: str; store_id: str
+    lines: list[RestockRecommendation]
+    total_estimated_cost: float
+    currency: str
+    requires_human_approval: bool = True
+    status: Literal['DRAFT','APPROVED','REJECTED'] = 'DRAFT'
+```
+
+**Procurement integrity (PayGuard lineage)**
+```python
+class SupplierInvoice(BaseModel):
+    invoice_id: str; supplier_id: str
+    po_id: str | None        # links invoice back to the PO
+    sku: str; amount: float; currency: str; timestamp: str
+    payload_raw: str
+    checksum: str | None     # SHA-256 of payload_raw
 
 class EvidenceDossier(BaseModel):
-    dossier_id: str
-    transaction_id: str
-    timestamp: str
-    anomaly_summary: str
-    forensic_score: float
-    regulatory_clauses: List[str]
-    applied_patch: Optional[str] = None
-    dispute_verdict: str  # 'MERCHANT_LIABLE' | 'BANK_LIABLE' | 'SPLIT_SETTLEMENT'
-    sha256_signature: str
+    dossier_id: str; subject_id: str; timestamp: str
+    summary: str; payload: dict
+    signature: str                          # HMAC-SHA256 over canonical payload
+    signature_algo: Literal['HMAC-SHA256'] = 'HMAC-SHA256'
 ```
 
 ---
 
-## 3. LangGraph State Machine Schema
+## 4. Agent state machine
 
 ```python
-from typing import TypedDict, List
-
-class AgentState(TypedDict):
-    transaction: dict
-    anomaly_diagnosis: dict
-    forensic_result: dict
-    regulatory_citations: List[str]
-    patch_code: str
-    execution_success: bool
-    dispute_verdict: str
-    logs: List[str]
-    current_step: str
+class ShelfGuardState(TypedDict, total=False):
+    sales_raw / inventory_raw / invoices_raw: list[str]   # inbound
+    valid_sales / valid_inventory / valid_invoices: list[dict]
+    rejected: list[dict]
+    demand_forecast: dict            # "store|sku" -> projected units
+    stock_alerts: list[dict]
+    po_draft: dict | None
+    payment_flags: list[dict]
+    dispute_drafts: list[dict]
+    dossiers: list[dict]             # signed audit records
+    logs: list[str]
 ```
+
+**Node sequence** (`build_graph`):
+`dq_sentinel → demand_forecaster → stock_watcher → ops_planner → payment_auditor → END`
+
+Each node is a pure `state -> state` function, so the graph is testable without an LLM and the LLM upgrade is a localized change at each `LLM-HOOK`.
 
 ---
 
-## 4. Subsystem Execution Flow
+## 5. DQ tool interface
 
-1. **Ingestion Layer:** Reads stream payload -> executes deterministic `PayGuardDQ` rules -> passes flagged payloads to `AgentState`.
-2. **Sentinel Layer:** `DQ-SentinelAgent` classifies anomaly type -> routes to worker node.
-3. **Worker Processing:**
-   - Schema errors -> `SelfHealing-RepairAgent` (AST parser + sandboxed patch execution).
-   - Velocity anomalies -> `Forensic-InvestigatorAgent` (`OriginX-T Lite` 30/90-day calculation).
-   - Compliance errors -> `Regulatory-AuditorAgent` (ChromaDB similarity search).
-4. **Arbitration & Evidence:** `Arbitration-DisputeAgent` synthesizes findings -> generates SHA-256 signed dossier -> broadcasts to Streamlit War-Room.
+`PayGuardDQEngine` exposes deterministic, zero-token validators the DQ-Sentinel calls:
+
+| Method | Validates | Returns |
+|---|---|---|
+| `validate_sales_record(raw)` | units > 0, price > 0, currency supported | `(ok, note, SalesRecord?)` |
+| `validate_inventory_snapshot(raw)` | on_hand ≥ 0, reorder ≥ 0 | `(ok, note, InventorySnapshot?)` |
+| `validate_supplier_invoice(raw)` | amount > 0, currency, **checksum** | `(ok, note, SupplierInvoice?)` |
+| `validate_payload(raw)` *(legacy)* | financial transaction | `(ok, AnomalyDiagnosis, TransactionPayload?)` |
+
+---
+
+## 6. Audit integrity design
+
+The prior PayGuard design compared a SHA-256 of a payload against a checksum field on the *same* payload — spoofable by anyone who controls the payload. ShelfGuard replaces this for evidence signing with **HMAC-SHA256 over a canonical JSON body using a server-held secret** (`SHELFGUARD_AUDIT_KEY`):
+
+```python
+sign(payload)   -> hmac.new(secret, canonical_json(payload), sha256).hexdigest()
+verify(payload, sig) -> hmac.compare_digest(sign(payload), sig)   # constant-time
+```
+
+An attacker cannot forge a valid signature without the key. (The supplier-supplied SHA-256 checksum is retained only as a transport-integrity hint on `SupplierInvoice`, never as proof of authenticity.)
+
+---
+
+## 7. Safety design decisions (from the PayGuard council review)
+
+- **Self-Healing-Repair is suggest-only** — the agent may propose a parser patch but never auto-executes code against live parsing logic.
+- **Payment-Auditor drafts, humans decide** — dispute verdicts default to `NEEDS_REVIEW` and `requires_human_approval = True`; no autonomous financial liability decision.
+- **Truthful dependencies** — `requirements.txt` installs only what is imported; later-phase deps are commented until used.
