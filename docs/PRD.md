@@ -56,7 +56,7 @@ A single small team cannot watch all three continuously. PayGuard-AgentX puts a 
 - **FEAT-5.1** Emit an HMAC-SHA256 signed evidence dossier for each PO draft and dispute draft, verifiable with the server key.
 
 ### EPIC 6 — LLM reasoning upgrade 🔜 Phase 2
-- **FEAT-6.1** Replace heuristic forecasting/routing with an LLM (Gemini/LiteLLM) at the marked `LLM-HOOK` points, keeping the same agent interfaces.
+- **FEAT-6.1** Replace heuristic forecasting/routing with a self-hosted LLM (Ollama / vLLM) at the marked `LLM-HOOK` points, keeping the same agent interfaces.
 
 ### EPIC 7 — Regulatory & self-healing 🔜 Phase 3
 - **FEAT-7.1** RAG check of invoices against supplier-contract / tax rules (Regulatory-Auditor).

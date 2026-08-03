@@ -13,7 +13,7 @@
 | Data validation | Pydantic v2 | Active |
 | Agent orchestration | LangGraph (`StateGraph`) | Active (optional import; sequential fallback) |
 | Audit integrity | `hmac` + `hashlib` (HMAC-SHA256) | Active |
-| LLM reasoning | Gemini 1.5 Flash / LiteLLM (at `LLM-HOOK` points) | Phase 2 |
+| LLM reasoning | Self-hosted Ollama (`phi4-mini`) / vLLM (at `LLM-HOOK` points) | Phase 2 |
 | Regulatory RAG | ChromaDB | Phase 3 |
 | Dashboard | Streamlit | Phase 4 |
 

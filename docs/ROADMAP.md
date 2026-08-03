@@ -20,7 +20,7 @@
 > Landed: LLM access layer with offline fallback (`src/core/llm.py`), `.env.example`, and a labeled evaluation harness (`evaluation/run_eval.py`). Remaining: validate against a live LLM key and add statistical seasonality.
 
 
-- [ ] Wire an LLM (Gemini 1.5 Flash / LiteLLM) at each `LLM-HOOK`: demand explanation, ambiguous-record triage, dispute rationale drafting
+- [ ] Wire a self-hosted LLM (Ollama `phi4-mini` / vLLM) at each `LLM-HOOK`: demand explanation, ambiguous-record triage, dispute rationale drafting
 - [ ] Secrets/config via `python-dotenv` (`.env.example`, `PAYGUARD_AUDIT_KEY`, LLM keys)
 - [ ] Statistical demand forecast (moving average / simple seasonality with `pandas`) alongside the LLM
 - [ ] Build a ~50-case labeled evaluation set; measure restock precision/recall and invoice-flag accuracy
