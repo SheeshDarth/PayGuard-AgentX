@@ -65,7 +65,7 @@
 
 - [x] Week 1 -- Ollama-first LLM layer; SQLite/Kuzu/Chroma stores; extended schemas; ARCHITECTURE.md
 - [x] Week 2 -- dynamic-routing supervisor (orchestrator.py); Regulatory-Auditor + seeded clauses; ToolKit tool registry + MCP server wrapper; SqliteSaver checkpointer factory
-- [ ] Week 3 -- PO-Critic / Dispute-Critic reflection loops; Demand/Stock negotiation protocol; confidence-based HITL; structured trace logging; agentic eval metrics
+- [x] Week 3 -- PO-Critic / Dispute-Critic reflection loops; Demand/Stock negotiation protocol; confidence-based HITL routing; SQLite trace logging; agentic eval metrics (plan-revision rate, escalation calibration)
 - [ ] Week 4 -- Streamlit dashboard (pipeline trace, HITL queue, HMAC verify); RUBRIC_TRACEABILITY.md; SDG_ALIGNMENT.md; demo capture
 
 > Kuzu (Cypher), Chroma, and Ollama code paths are written with offline fallbacks and need validation on the RTX 4050 laptop; the fallbacks are what the 39-test suite exercises.

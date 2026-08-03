@@ -102,7 +102,7 @@ def evaluate():
 
 
 def main():
-    r = evaluate()
+    r = full_eval()
     print("=" * 60)
     print("PayGuard-AgentX -- Evaluation (deterministic baseline)")
     print("=" * 60)
@@ -111,8 +111,53 @@ def main():
           % (rs["n"], rs["accuracy"], rs["precision"], rs["recall"], rs["f1"]))
     iv = r["invoice"]
     print("Invoice audit     (n=%d): acc=%.3f" % (iv["n"], iv["accuracy"]))
+    ag = r["agentic"]
+    print("Plan-revision rate       : %.3f (critic recall %.3f)" % (ag["plan_revision_rate"], ag["critic_recall"]))
+    print("Escalation miss rate     : %.3f (auto-approved %d)" % (ag["escalation_miss_rate"], ag["auto_approved"]))
     print("\nBaseline captured. Re-run after enabling the LLM hooks to compare.")
 
+
+
+
+def agentic_metrics(seed=11):
+    import random
+    from src.agents.critics import po_critic
+    from src.agents.hitl import route_decision
+    rng = random.Random(seed)
+    n = 20; planted = 0; caught = 0; revisions = 0
+    for i in range(n):
+        bad = (i % 2 == 0)
+        qty = 900 if bad else rng.randint(10, 100)
+        po = {"po_id": "PO_" + str(i),
+              "lines": [{"sku": "K", "recommend_order_qty": qty, "rationale": "x"}],
+              "total_estimated_cost": qty * 10.0}
+        review, _, _ = po_critic(po)
+        if bad:
+            planted += 1
+        if review["verdict"] == "REVISE":
+            revisions += 1
+            if bad:
+                caught += 1
+    plan_revision_rate = round(revisions / n, 3)
+    critic_recall = round(caught / planted, 3) if planted else 0.0
+    auto = 0; auto_wrong = 0
+    for i in range(20):
+        conf = rng.choice([0.6, 0.85, 0.9, 0.7])
+        val = rng.choice([100.0, 6000.0, 500.0])
+        gt_should_escalate = (val >= 5000.0) or (conf < 0.8)
+        if route_decision(conf, val) == "AUTO":
+            auto += 1
+            if gt_should_escalate:
+                auto_wrong += 1
+    escalation_miss_rate = round(auto_wrong / auto, 3) if auto else 0.0
+    return {"plan_revision_rate": plan_revision_rate, "critic_recall": critic_recall,
+            "auto_approved": auto, "escalation_miss_rate": escalation_miss_rate}
+
+
+def full_eval():
+    r = evaluate()
+    r["agentic"] = agentic_metrics()
+    return r
 
 if __name__ == "__main__":
     main()
