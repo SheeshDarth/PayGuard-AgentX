@@ -5,7 +5,7 @@
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Orchestration: LangGraph](https://img.shields.io/badge/Orchestration-LangGraph-orange.svg)](https://github.com/langchain-ai/langgraph)
-[![Status: Scale-up Week 1](https://img.shields.io/badge/status-scale--up%20Week%201-blue.svg)](docs/ROADMAP.md)
+[![Status: Scale-up Week 2](https://img.shields.io/badge/status-scale--up%20Week%202-blue.svg)](docs/ROADMAP.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
@@ -70,7 +70,7 @@ source venv/bin/activate           # Windows: venv\Scripts\activate
 pip install -r requirements.txt    # core scaffolding needs only pydantic
 
 python main.py                     # run the end-to-end demo
-pytest -q                          # run the test suite (22 tests)
+pytest -q                          # run the test suite (39 tests)
 python evaluation/run_eval.py      # print the evaluation baseline metrics
 ```
 
