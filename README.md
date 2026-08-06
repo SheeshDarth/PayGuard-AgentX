@@ -133,6 +133,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the single-model VRAM trade
 
 - [Product Requirements (PRD)](docs/PRD.md) · [Technical Requirements (TRD)](docs/TRD.md) · [Architecture](docs/ARCHITECTURE.md)
 - [Implementation Roadmap](docs/ROADMAP.md) · [Rubric Traceability](docs/RUBRIC_TRACEABILITY.md) · [SDG Alignment](docs/SDG_ALIGNMENT.md)
+- **[Final Project Report](docs/FINAL_REPORT.md)**
 
 ---
 
