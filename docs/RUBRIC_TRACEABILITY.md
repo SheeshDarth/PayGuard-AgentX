@@ -19,12 +19,12 @@
 
 ## Test coverage
 
-`pytest` — **47 passing** across `test_dq_engine`, `test_pipeline`, `test_foundation` (Week 1),
+`pytest` — **48 passing** across `test_dq_engine`, `test_pipeline`, `test_foundation` (Week 1),
 `test_week2`, `test_week3`. The Phase-1 deterministic core and the HMAC algorithm are
 extend-only and were not rewritten during the scale-up.
 
 ## Honest-status note
 
 Ollama, Kùzu, and Chroma real backends are validated on the demo laptop; in this repo's
-CI-free offline mode each has a tested pure-Python fallback that the 47-test suite exercises.
+CI-free offline mode each has a tested pure-Python fallback that the 48-test suite exercises.
 No production/compliance certification is claimed — the compliance framing is a design target.

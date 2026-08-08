@@ -170,11 +170,16 @@ def payment_auditor(state: dict, tolerance: float = 0.02) -> dict:
                              "claimed_amount": inv["amount"], "expected_amount": expected,
                              "proposed_verdict": "NEEDS_REVIEW", "requires_human_approval": True})
             if llm.is_live():
-                disputes[-1]["reason"] = llm.complete(
+                # Narrative only. The deterministic `reason` stays authoritative and
+                # signed; model prose goes in a separate, bounded, clearly-labelled
+                # field (and is never trusted as the dispute's ground truth).
+                note = (llm.complete(
                     "Draft a one-sentence procurement dispute rationale. Invoice bills "
                     + str(inv["amount"]) + " for " + inv["sku"] + " but the PO estimate was "
                     + str(expected) + ".",
-                    system="You are a concise, factual procurement dispute assistant.")
+                    system="You are a concise, factual procurement dispute assistant.") or "").strip()
+                if note:
+                    disputes[-1]["llm_explanation"] = note[:280]
             continue
         flags.append({"invoice_id": inv["invoice_id"], "flag_type": "CLEAN", "severity": "NONE",
                       "description": "Invoice passed payment audit."})

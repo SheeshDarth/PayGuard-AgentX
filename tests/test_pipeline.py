@@ -150,7 +150,30 @@ def test_llm_hook_enriches_dispute_when_live(monkeypatch):
     po = {"po_id": "PO_1", "total_estimated_cost": 100.0}
     inv = {"invoice_id": "I9", "supplier_id": "SUP_A", "sku": "K", "amount": 500.0, "po_id": "PO_1"}
     state = payment_auditor({"valid_invoices": [inv], "po_draft": po})
-    assert "LLM rationale" in state["dispute_drafts"][0]["reason"]
+    dispute = state["dispute_drafts"][0]
+    # Model prose lands in a separate, bounded field -- it must NOT overwrite the
+    # deterministic, signed `reason`.
+    assert "LLM rationale" in dispute["llm_explanation"]
+    assert dispute["reason"] == "Invoice amount exceeds PO estimate beyond tolerance"
+
+
+def test_revised_po_dossier_matches_final_object():
+    """Finding 1 regression: after the PO-Critic caps an oversized line and stamps a
+    confidence, the signed PO dossier must attest to the FINAL PO, not the pre-critic
+    draft the Ops-Planner originally signed."""
+    from src.agents.orchestrator import run_supervised
+    # reorder_point 600, on_hand 0 -> recommend_order_qty 600 (> PO-Critic ceiling 500).
+    inv = [RetailSimulator.inventory_snapshot(sku="SKU_MILK", store="STORE_01",
+                                              on_hand=0, reorder_point=600)]
+    state = run_supervised({"inventory_raw": inv}, memory=None)
+    po = state["po_draft"]
+    assert po["confidence"] is not None                       # critic ran
+    assert all(l["recommend_order_qty"] <= 500 for l in po["lines"])  # line capped
+    dossiers = [d for d in state["dossiers"]
+                if d["dossier_id"] == "DOS_" + po["po_id"]]
+    assert len(dossiers) == 1                                 # no stale duplicate
+    assert audit.verify_dossier_dict(dossiers[0]) is True     # signature valid
+    assert dossiers[0]["payload"] == po                       # attests to final PO
 
 
 def test_eval_harness_produces_metrics():

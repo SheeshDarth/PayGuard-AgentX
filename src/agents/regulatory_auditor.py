@@ -10,12 +10,13 @@ fallback; upgrades to Chroma + MiniLM retrieval when those are installed.
 from src.core import audit
 
 # Map a flag type to clause-aligned query keywords so retrieval is relevant even
-# with the offline keyword-overlap retriever.
+# with the offline keyword-overlap retriever. Only the flag types the Payment-Auditor
+# actually emits are listed (PO_MISMATCH, DUPLICATE); checksum failures are quarantined
+# upstream by the DQ-Sentinel and never reach this agent. Any unmapped type falls back
+# to the flag's own description as the query.
 _FLAG_QUERY = {
     "PO_MISMATCH": "purchase order amount tolerance deviation approved",
     "DUPLICATE": "duplicate invoices same supplier rejected",
-    "CHECKSUM_FAIL": "invoice integrity records payment released",
-    "AMOUNT_ANOMALY": "invoice amount purchase order approved tolerance",
 }
 
 

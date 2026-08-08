@@ -41,9 +41,13 @@ def po_critic(po_draft):
     review = {"critic": "PO-Critic", "target_id": po_draft.get("po_id"),
               "verdict": verdict, "issues": issues, "revised": revised}
     if verdict == "REVISE" and llm.is_live():
-        review["note"] = llm.complete(
+        # Narrative only -- kept in a clearly-labelled field, never overwriting the
+        # deterministic verdict/issues that the signed dossier attests to.
+        note = (llm.complete(
             "Summarise in one sentence why this purchase order needs revision: " + str(issues),
-            system="You are a concise procurement PO critic.")
+            system="You are a concise procurement PO critic.") or "").strip()
+        if note:
+            review["llm_explanation"] = note[:280]
     return review, po_draft, confidence
 
 
@@ -69,6 +73,18 @@ def dispute_critic(dispute):
     return review, dispute, confidence
 
 
+def _resign_dossier(state, dossier_id, subject_id, summary, payload):
+    """Replace any existing dossier with this id by one signed over the *final*
+    payload. The critics run after the agents already signed the initial draft, so
+    the dossier must be re-sealed once the draft is mutated (line caps, confidence,
+    verdict changes) -- otherwise the signed evidence would attest to a superseded
+    version rather than the artifact the human actually approves."""
+    dossiers = state.setdefault("dossiers", [])
+    dossiers[:] = [d for d in dossiers if d.get("dossier_id") != dossier_id]
+    dossiers.append(
+        audit.build_dossier(dossier_id, subject_id, summary, payload).model_dump())
+
+
 def run_critics(state):
     reviews = []
     po = state.get("po_draft")
@@ -76,6 +92,9 @@ def run_critics(state):
         review, po, _ = po_critic(po)
         state["po_draft"] = po
         reviews.append(review)
+        # Re-sign the PO dossier over the final (possibly capped, confidence-tagged) PO.
+        _resign_dossier(state, "DOS_" + str(po.get("po_id")), po.get("po_id"),
+                        "PO draft awaiting human approval (post-critic)", po)
         if review["revised"]:
             d = audit.build_dossier("DOS_CRIT_" + str(po.get("po_id")), po.get("po_id"),
                                     "PO-Critic revision", review)
@@ -85,6 +104,9 @@ def run_critics(state):
         review, disp, _ = dispute_critic(disp)
         reviews.append(review)
         revised.append(disp)
+        # Re-sign the dispute dossier over the final (post-critic) dispute.
+        _resign_dossier(state, "DOS_" + str(disp.get("dispute_id")), disp.get("invoice_id"),
+                        "Dispute draft awaiting human review (post-critic)", disp)
     if revised:
         state["dispute_drafts"] = revised
     state["critic_reviews"] = reviews
