@@ -21,6 +21,7 @@ from src.agents.pipeline import (
     dq_sentinel, demand_forecaster, stock_watcher, ops_planner, payment_auditor,
 )
 from src.agents.regulatory_auditor import regulatory_auditor
+from src.agents.ring_auditor import ring_auditor
 from src.agents.negotiation import run_negotiation
 from src.agents.critics import run_critics
 from src.agents.hitl import escalate
@@ -52,6 +53,7 @@ def run_supervised(state, memory=None):
         state = payment_auditor(state)
         if memory is not None:
             state = regulatory_auditor(state, memory)
+        state = ring_auditor(state)
     state = run_critics(state)
     state = escalate(state)
     state["route"] = r
