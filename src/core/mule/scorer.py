@@ -47,7 +47,9 @@ def compute_scores(cycles, smurfing, shells, g):
 
     for sr in smurfing:
         h, sub = sr["hub_account"], sr["pattern_subtype"]
-        sig[h]["smurf"] = 30 if sub == "scatter_gather" else 15
+        # Additive (an account is a hub in at most one result) so a participant
+        # bonus already accrued for this account is not clobbered.
+        sig[h]["smurf"] += 30 if sub == "scatter_gather" else 15
         pats[h].add(sub)
         for a in sr["connected_accounts"]:
             if a in sig:
@@ -143,4 +145,4 @@ def _ring_type(mem, cycles, smurfing, shells):
         types.add("shell_network")
     if len(types) == 1:
         return types.pop()
-    return "mixed" if types else "cycle"
+    return "mixed"   # multiple types, or (defensively) none -> never mislabel as a specific type

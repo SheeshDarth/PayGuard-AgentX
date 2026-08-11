@@ -27,9 +27,12 @@ def _transactions_from_state(state):
         return txns
     derived = []
     for inv in state.get("valid_invoices", []):
+        supplier = inv.get("supplier_id")
+        if not supplier:                       # no payee -> no valid graph edge
+            continue
         derived.append({"tx_id": inv.get("invoice_id"),
                         "sender": inv.get("po_id") or "STORE",
-                        "receiver": inv.get("supplier_id"),
+                        "receiver": supplier,
                         "amount": inv.get("amount", 0.0),
                         "timestamp": inv.get("timestamp")})
     return derived

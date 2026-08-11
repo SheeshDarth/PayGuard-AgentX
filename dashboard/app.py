@@ -28,7 +28,8 @@ from src.core import audit  # noqa: E402
 from src.core.memory import Memory  # noqa: E402
 from src.utils.retail_simulator import RetailSimulator  # noqa: E402
 
-st.set_page_config(page_title="PayGuard-AgentX", layout="wide")
+st.set_page_config(page_title="PayGuard-AgentX", layout="wide",
+                   initial_sidebar_state="expanded")
 st.title("PayGuard-AgentX -- operator dashboard")
 st.caption("Guarded multi-agent retail + procurement copilot. Humans approve money.")
 
