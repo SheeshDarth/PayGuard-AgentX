@@ -173,3 +173,24 @@ class TraceEvent(BaseModel):
     detail: str
     confidence: Optional[float] = None
     timestamp: str
+
+
+# ---------------------------------------------------------------------------
+# Network-fraud layer (money-muling integration)
+# ---------------------------------------------------------------------------
+
+class MuleRing(BaseModel):
+    """A detected money-muling fraud ring (procurement-collusion reframing)."""
+    ring_id: str
+    member_accounts: List[str] = Field(default_factory=list)
+    pattern_type: Literal['cycle', 'smurfing', 'shell_network', 'mixed']
+    risk_score: float = Field(..., ge=0.0, le=100.0)
+    confidence: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+
+
+class RingFinding(BaseModel):
+    """A per-account suspicion finding produced by the money-muling scorer."""
+    account_id: str
+    suspicion_score: float = Field(..., ge=0.0, le=100.0)
+    detected_patterns: List[str] = Field(default_factory=list)
+    ring_id: str = "NONE"

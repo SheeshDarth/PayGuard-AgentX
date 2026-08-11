@@ -16,6 +16,7 @@
 | 8 | **Safety / integrity** | HMAC-SHA256 signed evidence dossiers (keyed, not a spoofable self-checksum); every money-spending action `requires_human_approval = True` | [`src/core/audit.py`](../src/core/audit.py) | Tested |
 | 9 | **Evaluation** | Labeled eval: restock precision/recall/F1 + invoice-flag accuracy, plus agentic metrics (plan-revision rate, critic recall, escalation miss rate) | [`evaluation/run_eval.py`](../evaluation/run_eval.py) | Tested |
 | 10 | **Observability** | Structured SQLite trace log of every agent action with confidence | [`src/core/trace.py`](../src/core/trace.py) | Tested |
+| 11 | **Network-level fraud (knowledge graph)** | Money-muling detection — circular billing (cycles), invoice structuring (smurfing), shell suppliers — with multi-signal scoring + false-positive suppression; surfaced by the **Ring-Auditor** agent as HMAC-signed, HITL-routed fraud rings; Cypher artifact for the graph | [`src/core/mule/`](../src/core/mule/), [`ring_auditor.py`](../src/agents/ring_auditor.py), [`queries.cypher`](../src/core/mule/queries.cypher) | Tested |
 
 ## Test coverage
 

@@ -56,3 +56,13 @@ def test_run_supervised_audit_route_invokes_ring_auditor():
     assert state["route"] == "audit_only"
     assert "mule_rings" in state and state["mule_rings"]
     assert "ring_hitl" in state
+
+
+def test_ring_and_finding_schemas_validate():
+    from src.models.schemas import MuleRing, RingFinding
+    state = ring_auditor({"mule_transactions": _cycle_txns()})
+    ring = MuleRing.model_validate(state["mule_rings"][0])
+    assert ring.pattern_type == "cycle"
+    for a in state["mule_suspicious_accounts"]:
+        f = RingFinding.model_validate(a)
+        assert 0.0 <= f.suspicion_score <= 100.0

@@ -74,6 +74,7 @@ critics and the human-in-the-loop escalation.
 | **Ops-Planner** | Assembles alerts into a purchase-order draft — held for human approval |
 | **Payment-Auditor** | Reconciles returning invoices against the PO; detects duplicates and mismatches; drafts disputes |
 | **Regulatory-Auditor** | Cites the specific compliance clause a flagged invoice violates (RAG over seeded clauses) |
+| **Ring-Auditor** | Network-level fraud: builds the payment graph, detects money-muling rings (circular billing / structuring / shell suppliers), HMAC-signs each ring, routes by risk to human review |
 | **PO-Critic / Dispute-Critic** | Reflection loops that revise oversized POs / weak disputes before they reach the approval queue |
 
 ### 4.2 Data flow
@@ -163,6 +164,7 @@ Current baseline (deterministic core, offline stub for language reasoning):
 | Restock decision accuracy (n=30) | 0.733 |
 | Restock precision / recall / F1 | 0.706 / 0.800 / 0.750 |
 | Invoice-audit accuracy (n=20) | 1.000 |
+| Money-muling ring recall (2 planted rings) | 1.000 (payroll false-positive: none) |
 | Plan-revision rate (critic activity) | 0.500 |
 | Critic recall | 1.000 |
 | Escalation miss rate | 0.000 (6 auto-approved) |

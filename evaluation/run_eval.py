@@ -114,6 +114,9 @@ def main():
     ag = r["agentic"]
     print("Plan-revision rate       : %.3f (critic recall %.3f)" % (ag["plan_revision_rate"], ag["critic_recall"]))
     print("Escalation miss rate     : %.3f (auto-approved %d)" % (ag["escalation_miss_rate"], ag["auto_approved"]))
+    mu = r["mule"]
+    print("Mule ring recall         : %.3f (%d/%d planted rings; payroll FP=%s)"
+          % (mu["ring_recall"], mu["detected_rings"], mu["planted_rings"], mu["payroll_false_positive"]))
     print("\nBaseline captured. Re-run after enabling the LLM hooks to compare.")
 
 
@@ -157,7 +160,44 @@ def agentic_metrics(seed=11):
 def full_eval():
     r = evaluate()
     r["agentic"] = agentic_metrics()
+    r["mule"] = mule_metrics()
     return r
+
+
+def mule_metrics():
+    """Ring-detection quality on a labelled synthetic graph: two planted circular
+    rings + a payroll trap. Reports ring recall and whether the payroll account is
+    wrongly flagged (false-positive control)."""
+    from datetime import datetime, timedelta
+    from src.core.mule.graph_model import build_graph
+    from src.core.mule.cycle_detector import detect_cycles
+    from src.core.mule.smurfing_detector import detect_smurfing
+    from src.core.mule.shell_detector import detect_shell_networks
+    from src.core.mule.scorer import compute_scores
+    base = datetime(2024, 1, 1, 9, 0, 0)
+
+    def tx(tid, s, r, a, m):
+        return {"tx_id": tid, "sender": s, "receiver": r, "amount": a,
+                "timestamp": base + timedelta(minutes=m)}
+
+    txns, planted = [], []
+    for k, (x, y, z) in enumerate([("A1", "B1", "C1"), ("A2", "B2", "C2")]):
+        off = k * 100
+        txns += [tx("c%d1" % k, x, y, 5000, off), tx("c%d2" % k, y, z, 5000, off + 10),
+                 tx("c%d3" % k, z, x, 5000, off + 20)]
+        planted.append({x, y, z})
+    for i in range(12):                       # payroll trap (must not flag)
+        txns.append(tx("p%d" % i, "PAY", "P%d" % i, 3000, i))
+
+    g = build_graph(txns)
+    accounts, rings = compute_scores(detect_cycles(g), detect_smurfing(g),
+                                     detect_shell_networks(g), g)
+    ring_sets = [set(r["member_accounts"]) for r in rings]
+    detected = sum(1 for p in planted if any(p & rs for rs in ring_sets))
+    return {"planted_rings": len(planted), "detected_rings": detected,
+            "ring_recall": round(detected / len(planted), 3) if planted else 0.0,
+            "payroll_false_positive": any(a["account_id"] == "PAY" for a in accounts)}
+
 
 if __name__ == "__main__":
     main()
