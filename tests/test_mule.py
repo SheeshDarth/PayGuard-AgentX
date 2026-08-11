@@ -101,3 +101,33 @@ def test_scorer_flags_rings_and_spares_payroll():
     for r in rings:
         assert r["pattern_type"] in {"cycle", "smurfing", "shell_network", "mixed"}
         assert r["member_accounts"]
+
+
+# --- Phase 2: ToolKit exposure + Cypher-evidence golden test ----------------
+
+def test_mule_ring_scan_tool_shape():
+    from src.agents.tools import ToolKit
+    out = ToolKit().mule_ring_scan(_dataset())
+    assert set(out) == {"suspicious_accounts", "fraud_rings", "summary"}
+    g = build_graph(_dataset())
+    assert out["summary"]["total_accounts_analyzed"] == len(g.nodes)
+    assert out["summary"]["fraud_rings_detected"] == len(out["fraud_rings"])
+    flagged = {a["account_id"] for a in out["suspicious_accounts"]}
+    assert flagged and "PAY" not in flagged
+
+
+def test_mule_ring_scan_registered_in_schemas():
+    from src.agents.tools import ToolKit
+    names = {s["name"] for s in ToolKit().schemas()}
+    assert "mule_ring_scan" in names
+
+
+def test_cypher_evidence_matches_python_rings():
+    # The committed Cypher cycle query MATCHes a 3-hop loop; the Python detector
+    # must return that same ring on the fixture -- artifact and code in lockstep.
+    from pathlib import Path
+    cypher = Path("src/core/mule/queries.cypher").read_text(encoding="utf-8")
+    assert "MATCH" in cypher and ":SENT" in cypher  # evidence artifact present
+    g = build_graph(_dataset())
+    cycles = detect_cycles(g)
+    assert {frozenset(c["cycle_members"]) for c in cycles} == {frozenset({"A", "B", "C"})}

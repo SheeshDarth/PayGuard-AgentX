@@ -62,6 +62,32 @@ class ToolKit:
     def audit_verify(self, dossier):
         return audit.verify_dossier_dict(dossier)
 
+    # 8. money-muling network scan (Phase-2 integration)
+    def mule_ring_scan(self, transactions):
+        """Run the full money-muling pipeline over a transaction list and return
+        the suspicious accounts, fraud rings, and a summary. Deterministic, 0 tokens.
+        A transaction is {tx_id, sender, receiver, amount, timestamp}."""
+        from src.core.mule.graph_model import build_graph
+        from src.core.mule.cycle_detector import detect_cycles
+        from src.core.mule.smurfing_detector import detect_smurfing
+        from src.core.mule.shell_detector import detect_shell_networks
+        from src.core.mule.scorer import compute_scores
+        g = build_graph(transactions)
+        cycles = detect_cycles(g)
+        smurf = detect_smurfing(g)
+        shells = detect_shell_networks(g)
+        accounts, rings = compute_scores(cycles, smurf, shells, g)
+        return {
+            "suspicious_accounts": [
+                {"account_id": a["account_id"], "suspicion_score": a["suspicion_score"],
+                 "detected_patterns": a["detected_patterns"], "ring_id": a["ring_id"]}
+                for a in accounts],
+            "fraud_rings": rings,
+            "summary": {"total_accounts_analyzed": len(g.nodes),
+                        "suspicious_accounts_flagged": len(accounts),
+                        "fraud_rings_detected": len(rings)},
+        }
+
     def schemas(self):
         """Lightweight tool schemas (name/description/inputs) for MCP exposure."""
         return [
@@ -79,4 +105,7 @@ class ToolKit:
              "inputs": {"dossier_id": "str", "subject_id": "str", "summary": "str", "payload": "dict"}},
             {"name": "audit_verify", "description": "Verify an evidence dossier signature",
              "inputs": {"dossier": "dict"}},
+            {"name": "mule_ring_scan", "description": "Money-muling graph scan (cycles / "
+             "smurfing / shells) -> suspicious accounts + fraud rings",
+             "inputs": {"transactions": "list[{tx_id,sender,receiver,amount,timestamp}]"}},
         ]

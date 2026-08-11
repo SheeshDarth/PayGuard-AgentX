@@ -35,6 +35,10 @@ def build_server():
     def case_recall(text: str, k: int = 3):
         return kit.case_recall(text, k)
 
+    @server.tool()
+    def mule_ring_scan(transactions: list):
+        return kit.mule_ring_scan(transactions)
+
     return server
 
 

@@ -63,7 +63,7 @@ def test_toolkit_tools_callable():
     kit.graph.add_dispute("SUP_A", "D1", "I1")
     kit.graph.add_dispute("SUP_A", "D2", "I2")
     assert kit.graph_query("multi_dispute_suppliers") == ["SUP_A"]
-    assert len(kit.schemas()) == 7
+    assert len(kit.schemas()) == 8  # + mule_ring_scan (Phase-2)
 
 
 def test_checkpointer_degrades_gracefully():
