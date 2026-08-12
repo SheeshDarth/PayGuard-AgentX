@@ -9,6 +9,13 @@ langgraph>=0.1.0
 pytest>=8.0.0
 rich>=13.7.0
 
+# ── Dashboard (operator workbench: streamlit run dashboard/app.py) ───────────
+# Only needed to run the UI; the core pipeline, tests, and eval run without these.
+streamlit>=1.35.0
+pandas>=2.2.0
+networkx>=3.2          # fraud-network graph (offline)
+matplotlib>=3.8.0      # static graph render; UI degrades to an edge table if absent
+
 # -- Phase 2 (live LLM; optional -- offline fallback runs without these) --
 # Self-hosted only (course constraint): Ollama or vLLM, called over local HTTP.
 # No cloud-provider SDK is required or used.
