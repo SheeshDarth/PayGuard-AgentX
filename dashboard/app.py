@@ -158,10 +158,19 @@ with tab_pipeline:
                 st.text("  x %s: %s" % (r.get("kind", "?"), r.get("note", "")))
     with right:
         st.subheader("HITL approval queue")
+        disp = st.session_state.setdefault("dispositions", {})
         q = state.get("hitl_queue", {"auto": [], "human": []})
         st.markdown("**Needs human approval** (%d)" % len(q["human"]))
         for it in q["human"]:
             st.warning("%s %s (conf %s)" % (it["kind"], it["id"], it.get("confidence")))
+            k = "%s_%s" % (it["kind"], it["id"])
+            b1, b2, _ = st.columns([1, 1, 3])
+            if b1.button("Approve", key="ap_" + k):
+                disp[k] = "APPROVED"
+            if b2.button("Reject", key="rj_" + k):
+                disp[k] = "REJECTED"
+            if disp.get(k):
+                st.caption("decision: **%s**" % disp[k])
         st.markdown("**Auto-approved** (%d)" % len(q["auto"]))
         for it in q["auto"]:
             st.success("%s %s (conf %s)" % (it["kind"], it["id"], it.get("confidence")))
@@ -170,6 +179,14 @@ with tab_pipeline:
         rq = state.get("ring_hitl", {"review": [], "monitor": []})
         for it in sorted(rq["review"], key=lambda x: x["risk_score"], reverse=True):
             st.error("REVIEW %s  risk %.1f  (%s)" % (it["ring_id"], it["risk_score"], it["pattern_type"]))
+            rk = "ring_" + it["ring_id"]
+            b1, b2, _ = st.columns([1, 1, 3])
+            if b1.button("Escalate (SAR)", key="es_" + rk):
+                disp[rk] = "ESCALATED"
+            if b2.button("Dismiss", key="di_" + rk):
+                disp[rk] = "DISMISSED"
+            if disp.get(rk):
+                st.caption("decision: **%s**" % disp[rk])
         for it in sorted(rq["monitor"], key=lambda x: x["risk_score"], reverse=True):
             st.info("monitor %s  risk %.1f  (%s)" % (it["ring_id"], it["risk_score"], it["pattern_type"]))
         if not rq["review"] and not rq["monitor"]:
