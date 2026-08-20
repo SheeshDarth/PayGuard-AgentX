@@ -96,7 +96,14 @@ with st.sidebar:
     st.divider()
     muling = st.checkbox("Money-muling scenario", value=True,
                          help="Inject a synthetic fraud graph (cycle + shell + payroll trap)")
-    run = st.button("Run supervised pipeline", type="primary")
+    c_run, c_reset = st.columns(2)
+    run = c_run.button("Run pipeline", type="primary", use_container_width=True)
+    reset = c_reset.button("Reset", use_container_width=True)
+
+if reset:
+    st.session_state.pop("state", None)
+    st.session_state.pop("dispositions", None)
+    st.rerun()
 
 if run:
     st.session_state["state"] = run_supervised(
@@ -137,12 +144,38 @@ with tab_overview:
         st.caption("No fraud rings in this run. Enable the Money-muling scenario in the sidebar.")
 
     if accounts:
-        st.subheader("Suspicious accounts (risk-ranked)")
         import pandas as pd
-        st.dataframe(pd.DataFrame([
-            {"account": a["account_id"], "score": a["suspicion_score"], "ring": a["ring_id"],
-             "patterns": ", ".join(a["detected_patterns"])} for a in accounts]),
-            use_container_width=True, hide_index=True)
+
+        st.subheader("Risk distribution")
+        tier_counts = {}
+        for a in accounts:
+            tier_counts[risk_tier(a["suspicion_score"])[0]] = tier_counts.get(
+                risk_tier(a["suspicion_score"])[0], 0) + 1
+        order = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "NORMAL"]
+        st.bar_chart(pd.Series({t: tier_counts.get(t, 0) for t in order}, name="accounts"))
+
+        st.subheader("Suspicious accounts (risk-ranked)")
+        query = st.text_input("Filter by account ID or pattern", "")
+        rows = [{"account": a["account_id"], "score": a["suspicion_score"], "ring": a["ring_id"],
+                "patterns": ", ".join(a["detected_patterns"])} for a in accounts]
+        if query:
+            q = query.lower()
+            rows = [r for r in rows if q in r["account"].lower() or q in r["patterns"].lower()]
+        st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+        if query and not rows:
+            st.caption("No accounts match '%s'." % query)
+
+        report = {
+            "summary": {"route": state.get("route"), "suspicious_accounts": len(accounts),
+                       "fraud_rings": len(rings), "dossiers_valid": verified,
+                       "dossiers_total": len(dossiers)},
+            "suspicious_accounts": accounts, "fraud_rings": rings,
+            "dispositions": st.session_state.get("dispositions", {}),
+        }
+        st.download_button("Download investigation report (JSON)",
+                           json.dumps(report, indent=2, default=str),
+                           file_name="payguard_investigation_report.json",
+                           mime="application/json")
 
 with tab_pipeline:
     left, right = st.columns(2)
