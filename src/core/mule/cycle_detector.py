@@ -37,16 +37,34 @@ def _tarjan_scc(g):
 
 
 def detect_cycles(g, min_len=3, max_len=5, time_budget_s=8.0):
+    """Enumerate simple cycles of length min_len..max_len.
+
+    Convenience wrapper that discards the truncation flag. Callers that record or
+    sign the result should use detect_cycles_status() instead, so an incomplete
+    search is never presented as an exhaustive one.
+    """
+    results, _truncated = detect_cycles_status(g, min_len, max_len, time_budget_s)
+    return results
+
+
+def detect_cycles_status(g, min_len=3, max_len=5, time_budget_s=8.0):
+    """Same search as detect_cycles, returning (results, truncated).
+
+    truncated is True when the wall-clock budget stopped enumeration early, which
+    means the cycle list is a subset -- not proof that no further cycles exist.
+    """
     t0 = time.time()
     sccs = [set(c) for c in _tarjan_scc(g) if len(c) >= 3]
     seen, results = set(), []
     for scc in sccs:
         for root in list(scc):
             if time.time() - t0 > time_budget_s:
-                return results
+                return results, True
             _dfs(g, root, root, [root], {root}, 1, min_len, max_len, scc,
                  seen, results, t0, time_budget_s)
-    return results
+    # _dfs also bails out on the budget without signalling, so re-check the clock:
+    # an over-budget elapsed time means at least one branch was cut short.
+    return results, (time.time() - t0) > time_budget_s
 
 
 def _dfs(g, start, cur, path, visited, depth, min_len, max_len, scc,

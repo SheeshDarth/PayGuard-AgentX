@@ -30,12 +30,17 @@ from src.agents.hitl import escalate
 def route(state):
     has_retail = bool(state.get("sales_raw") or state.get("inventory_raw"))
     has_invoices = bool(state.get("invoices_raw"))
+    has_payment_graph = bool(state.get("mule_transactions"))
     if has_retail and has_invoices:
         return "full"
     if has_invoices:
         return "audit_only"
     if has_retail:
         return "restock_only"
+    # A payment graph on its own is still actionable -- the network-fraud layer does
+    # not depend on procurement invoices being present.
+    if has_payment_graph:
+        return "ring_only"
     return "noop"
 
 
@@ -53,6 +58,11 @@ def run_supervised(state, memory=None):
         state = payment_auditor(state)
         if memory is not None:
             state = regulatory_auditor(state, memory)
+    # Network-fraud layer: runs whenever there is a payment graph to analyse -- either
+    # an explicit transaction set, or invoices that were just audited above. Keeping
+    # this independent of the route string stops the Ring-Auditor from being silently
+    # skipped for a mule-only input.
+    if r in ("audit_only", "full", "ring_only") or state.get("mule_transactions"):
         state = ring_auditor(state)
     state = run_critics(state)
     state = escalate(state)

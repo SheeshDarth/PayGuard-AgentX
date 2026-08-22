@@ -67,6 +67,28 @@ def test_smurfing_fan_in_detected_and_payroll_suppressed():
     assert "PAY" not in hubs
 
 
+def test_scatter_gather_hub_detected_without_double_counting():
+    """Review finding H: only fan_in was covered. scatter_gather unions two windows
+    and sums their counts, which is exactly where double-counting would hide."""
+    txns = []
+    for i in range(12):                       # 12 unique senders -> HUB
+        txns.append(_tx("IN%d" % i, "S%d" % i, "HUB", 1000 + i, i))
+    # Outgoing amounts must vary widely: near-identical payouts at a consistent hour
+    # are the payroll signature, and the suppressor would (correctly) filter the hub.
+    for i in range(11):                       # HUB -> 11 unique receivers
+        txns.append(_tx("OUT%d" % i, "HUB", "R%d" % i, 900 + i * 300, 60 + i))
+
+    g = build_graph(txns)
+    hubs = {r["hub_account"]: r for r in detect_smurfing(g)}
+    assert "HUB" in hubs
+    hub = hubs["HUB"]
+    assert hub["pattern_subtype"] == "scatter_gather"
+    # Both sides are represented, and no counterparty is counted twice.
+    assert len(hub["connected_accounts"]) == len(set(hub["connected_accounts"])) == 23
+    # Windowed totals are measured over the window, not the account lifetime.
+    assert hub["transaction_count_72h"] == 23
+
+
 def test_shell_chain_detected():
     g = build_graph(_dataset())
     shells = detect_shell_networks(g)

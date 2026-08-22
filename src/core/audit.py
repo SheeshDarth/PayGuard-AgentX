@@ -13,14 +13,34 @@ import hashlib
 import hmac
 import json
 import os
+import warnings
 from datetime import datetime, timezone
 from src.models.schemas import EvidenceDossier
 
 DEFAULT_DEMO_KEY = "payguard-dev-demo-key-change-me"
 
 
+_warned_default_key = False
+
+
 def _secret(key: str | None = None) -> bytes:
-    return (key or os.getenv("PAYGUARD_AUDIT_KEY", DEFAULT_DEMO_KEY)).encode("utf-8")
+    """Resolve the signing secret. Falls back to the demo key, but never silently:
+    that key is published in this repository, so anyone who can read the source can
+    forge a signature. Warning once makes the weakened guarantee visible instead of
+    letting a demo run masquerade as tamper-evident. The returned bytes -- and so the
+    signing algorithm -- are unchanged."""
+    global _warned_default_key
+    resolved = key or os.getenv("PAYGUARD_AUDIT_KEY")
+    if not resolved:
+        if not _warned_default_key:
+            _warned_default_key = True
+            warnings.warn(
+                "PAYGUARD_AUDIT_KEY is not set -- signing with the public dev demo key. "
+                "Dossiers are NOT tamper-evident against anyone who can read this repo. "
+                "Set PAYGUARD_AUDIT_KEY for any run whose evidence is meant to be trusted.",
+                RuntimeWarning, stacklevel=2)
+        resolved = DEFAULT_DEMO_KEY
+    return resolved.encode("utf-8")
 
 
 def _canonical(payload: dict) -> bytes:

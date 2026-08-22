@@ -58,6 +58,50 @@ def test_run_supervised_audit_route_invokes_ring_auditor():
     assert "ring_hitl" in state
 
 
+def test_payment_graph_alone_still_reaches_the_ring_auditor():
+    """Review finding A: route() used to inspect only sales/inventory/invoices, so a
+    mule-only state fell through to 'noop' and the Ring-Auditor silently never ran."""
+    from src.agents.orchestrator import route
+    state_in = {"mule_transactions": _cycle_txns()}
+    assert route(state_in) == "ring_only"
+
+    state = run_supervised(dict(state_in))
+    assert state["mule_rings"], "ring detection must run without invoices present"
+    assert state["ring_hitl"]["review"]
+
+
+def test_empty_scan_populates_the_whole_state_contract():
+    """Review finding B: the early-return path set only mule_rings, so consumers
+    could KeyError depending purely on input shape."""
+    state = ring_auditor({})
+    assert state["mule_rings"] == []
+    assert state["mule_suspicious_accounts"] == []
+    assert state["ring_hitl"] == {"review": [], "monitor": []}
+    assert state["mule_scan_truncated"] is False
+
+
+def test_truncated_cycle_search_is_reported_not_hidden():
+    """Review finding E: a wall-clock-truncated search must be marked, so a partial
+    result is never signed as though it were exhaustive."""
+    from src.core.mule.cycle_detector import detect_cycles_status
+    from src.core.mule.graph_model import build_graph
+    g = build_graph(_cycle_txns())
+
+    results, truncated = detect_cycles_status(g)
+    assert truncated is False and results
+
+    # An already-exhausted budget must abort and say so, rather than claiming "no
+    # cycles found". A negative budget is used because time.time() on Windows has
+    # ~15ms resolution, so a 0.0 budget can measure elapsed == 0.0 and not trip.
+    _partial, truncated = detect_cycles_status(g, time_budget_s=-1.0)
+    assert truncated is True
+
+
+def test_scan_truncation_flag_reaches_agent_state():
+    state = ring_auditor({"mule_transactions": _cycle_txns()})
+    assert state["mule_scan_truncated"] is False
+
+
 def test_ring_and_finding_schemas_validate():
     from src.models.schemas import MuleRing, RingFinding
     state = ring_auditor({"mule_transactions": _cycle_txns()})

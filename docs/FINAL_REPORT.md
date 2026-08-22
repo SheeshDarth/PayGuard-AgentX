@@ -16,7 +16,7 @@ catching duplicate or inflated billing, and drafting disputes. Every consequenti
 action is sealed in a tamper-evident, HMAC-signed audit dossier, and no autonomous
 decision ever spends money.
 
-The system is built, tested (**63 passing tests**), and runs end-to-end offline with
+The system is built, tested (**68 passing tests**), and runs end-to-end offline with
 no GPU, no network, and no API key. Every heavy component — the self-hosted language
 model, the graph database, the vector store — is local-first with a tested pure-Python
 fallback, so the pipeline is fully demonstrable on any machine and lights up for real
@@ -184,11 +184,35 @@ made about real-world performance.
 - **No compliance certification** is claimed — the fraud/compliance framing is a design
   target, kept deliberately honest.
 - The real Ollama / vLLM / Kùzu / Chroma backends each have a tested pure-Python
-  fallback, and it is those fallbacks the 63-test suite exercises. The **live** backends
+  fallback, and it is those fallbacks the 68-test suite exercises. The **live** backends
   have **not** yet been run on the demo laptop — that on-laptop validation is the one
   remaining hands-on step.
 - The language-model hooks are wired and offline-tested; live-model uplift over the
   heuristic baseline is future measurement work.
+
+### 8.1 Known engineering limitations (found by internal review, deliberately deferred)
+
+A multi-agent code review of the network-fraud layer produced the findings below. Each
+was triaged rather than reflexively fixed; the reasoning is recorded here because
+"we knew, and here is why we chose not to" is a more honest position than silence.
+
+| # | Limitation | Why it is acceptable here | What it would take |
+|---|---|---|---|
+| 1 | **Smurfing window is O(E²)** — the 72h sliding window restarts its inner scan at every edge, so cost is `O(Σ_v deg(v)²)`. It has no wall-clock guard, unlike cycle detection. | The demo graph is ~20 transactions (≈400 operations). The quadratic term is invisible below a few thousand edges per account. | A two-pointer window with a decrementing counterparty counter — `O(n log n)`, sort-dominated. |
+| 2 | **`_avg_retransmit` is O(recv × send)** per account; the scorer uses an `O(n²)` `list.count` in a loop. | Same scale argument; both lists are already sorted, so the fix is mechanical. | Single merge pass / `collections.Counter`. |
+| 3 | **Tarjan SCC is recursive** and raises the interpreter recursion limit as a global side effect. On a very large single SCC this could exhaust the C stack rather than raise a catchable error. | Demo graphs are far below any depth that matters. | An iterative explicit-stack Tarjan; drop the global limit change. |
+| 4 | **The HMAC signature covers `dossier_id`, `subject_id` and `payload`, but not `summary` or `timestamp`** — those fields could drift without invalidating the signature. | The project operates a deliberate **extend-only** change-control rule on the signing algorithm: altering what is signed would invalidate every dossier already issued. Crypto agility after issuance is genuinely hard, and we chose stability over a silent re-baseline. Today `summary` is derived deterministically from signed payload content, so no drift path exists in practice. | A versioned signing scheme (`sig_v2`) that covers the full record, with verification accepting both versions during migration. |
+| 5 | **`ring_auditor` duplicates the detector pipeline** already present in `ToolKit.mule_ring_scan`. | Five lines of call sequence; both are covered by tests, so drift would be caught. | Extract a shared `src/core/mule/pipeline.scan()` used by both. |
+
+**Tested envelope:** the detectors are exercised on graphs of tens of transactions.
+Behaviour above roughly a few thousand edges per account is **not** characterised, and
+limitations 1–3 are the reason. No claim is made about performance at production scale.
+
+Fixed during the same review rather than deferred: the supervisor could route a
+payment-graph-only input to `noop` (silently skipping the Ring-Auditor); the
+no-transaction path populated only part of the state contract; a wall-clock-truncated
+cycle search was indistinguishable from an exhaustive one; and the audit module fell
+back to the repository's published demo signing key without warning.
 
 ---
 

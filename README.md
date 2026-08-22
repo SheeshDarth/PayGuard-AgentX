@@ -6,7 +6,7 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Orchestration: LangGraph](https://img.shields.io/badge/Orchestration-LangGraph-orange.svg)](https://github.com/langchain-ai/langgraph)
 [![LLM: self-hosted (Ollama/vLLM)](https://img.shields.io/badge/LLM-self--hosted%20Ollama%2FvLLM-green.svg)](src/core/llm.py)
-[![Tests: 63 passing](https://img.shields.io/badge/tests-63%20passing-brightgreen.svg)](tests/)
+[![Tests: 68 passing](https://img.shields.io/badge/tests-68%20passing-brightgreen.svg)](tests/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
@@ -20,7 +20,7 @@
 
 They meet at one natural loop: the **purchase order → supplier invoice → payment** cycle. ShelfSense decides *what to buy*; PayGuard *guards the data going in and audits the money coming back*. The deterministic PayGuardDQ engine is a **tool the agents call** — not a passive validator — which is what makes the loop genuinely *agentic*.
 
-> **Honest status:** the full guarded multi-agent loop is built, tested (63 passing), and runs end-to-end offline with **no GPU, no network, and no API key**. Every heavy component (self-hosted LLM, Kùzu graph, Chroma vectors) is local-first with a tested pure-Python fallback, so it also lights up for real on the demo laptop. Nothing here is production-audited — the compliance/fraud language describes the *design target*, not a certified system, and all data is synthetic.
+> **Honest status:** the full guarded multi-agent loop is built, tested (68 passing), and runs end-to-end offline with **no GPU, no network, and no API key**. Every heavy component (self-hosted LLM, Kùzu graph, Chroma vectors) is local-first with a tested pure-Python fallback, so it also lights up for real on the demo laptop. Nothing here is production-audited — the compliance/fraud language describes the *design target*, not a certified system, and all data is synthetic.
 
 ---
 
@@ -68,7 +68,7 @@ source venv/bin/activate           # Windows: venv\Scripts\activate
 pip install -r requirements.txt    # core scaffolding needs only pydantic
 
 python main.py                     # end-to-end demo (offline, no key needed)
-pytest -q                          # 63 tests
+pytest -q                          # 68 tests
 python evaluation/run_eval.py      # evaluation baseline + agentic metrics
 streamlit run dashboard/app.py     # operator dashboard -> http://localhost:8501
 ```
@@ -113,7 +113,7 @@ src/
   utils/retail_simulator.py # synthetic sales / inventory / invoice generator
 evaluation/run_eval.py      # labeled eval + agentic metrics
 main.py                     # end-to-end demo entry point
-tests/                      # 63 pytest cases
+tests/                      # 68 pytest cases
 docs/                       # PRD, TRD, ARCHITECTURE, ROADMAP, RUBRIC, SDG
 ```
 

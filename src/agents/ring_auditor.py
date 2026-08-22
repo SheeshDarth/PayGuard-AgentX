@@ -13,7 +13,7 @@ Transaction source (priority order):
 
 from src.core import audit
 from src.core.mule.graph_model import build_graph
-from src.core.mule.cycle_detector import detect_cycles
+from src.core.mule.cycle_detector import detect_cycles_status
 from src.core.mule.smurfing_detector import detect_smurfing
 from src.core.mule.shell_detector import detect_shell_networks
 from src.core.mule.scorer import compute_scores
@@ -50,15 +50,21 @@ def _ring_critic(ring):
 def ring_auditor(state):
     txns = _transactions_from_state(state)
     if not txns:
+        # Populate the whole contract, not just part of it -- downstream consumers
+        # must not have to guess which keys exist for a given input shape.
         state["mule_rings"] = []
+        state["mule_suspicious_accounts"] = []
+        state["ring_hitl"] = {"review": [], "monitor": []}
+        state["mule_scan_truncated"] = False
         state.setdefault("logs", []).append("Ring-Auditor: no transactions to scan.")
         return state
 
     g = build_graph(txns)
-    cycles = detect_cycles(g)
+    cycles, truncated = detect_cycles_status(g)
     smurf = detect_smurfing(g)
     shells = detect_shell_networks(g)
     accounts, rings = compute_scores(cycles, smurf, shells, g)
+    state["mule_scan_truncated"] = truncated
 
     confirmed, queue = [], {"review": [], "monitor": []}
     for ring in rings:
