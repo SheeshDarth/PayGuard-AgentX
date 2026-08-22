@@ -13,7 +13,7 @@
 - [x] 5-agent pipeline + LangGraph wiring (`src/agents/pipeline.py`)
 - [x] Synthetic retail/procurement stream generator (`src/utils/retail_simulator.py`)
 - [x] End-to-end demo (`main.py`) + 19 passing tests
-- **Deliverable:** `python main.py` runs the full loop — DQ quarantine → demand → stock alert → PO draft (HITL) → invoice audit → dispute draft → signed dossiers.
+- **Deliverable:** `python main.py` runs the full **supervised** system — route selection → DQ quarantine → demand → stock alert (with negotiation) → PO draft + PO-Critic (HITL) → invoice audit → dispute draft → regulatory clause citation → money-muling ring detection → signed dossiers.
 
 ## 🟡 Phase 2 — Real agentic reasoning (Weeks 3–4) — PARTIALLY DONE
 
@@ -68,4 +68,4 @@
 - [x] Week 3 -- PO-Critic / Dispute-Critic reflection loops; Demand/Stock negotiation protocol; confidence-based HITL routing; SQLite trace logging; agentic eval metrics (plan-revision rate, escalation calibration)
 - [x] Week 4 -- Streamlit dashboard (`dashboard/app.py`: pipeline trace, HITL queue, one-click HMAC verify + tamper demo); `docs/RUBRIC_TRACEABILITY.md`; `docs/SDG_ALIGNMENT.md`
 
-> Kuzu (Cypher), Chroma, and Ollama code paths are written with offline fallbacks and need validation on the RTX 4050 laptop; the fallbacks are what the 57-test suite exercises. Remaining hands-on step: run `streamlit run dashboard/app.py` on the laptop and capture the demo.
+> Kuzu (Cypher), Chroma, and Ollama code paths are written with offline fallbacks and need validation on the RTX 4050 laptop; the fallbacks are what the 63-test suite exercises. Remaining hands-on step: run `streamlit run dashboard/app.py` on the laptop and capture the demo.

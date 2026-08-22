@@ -16,7 +16,7 @@ catching duplicate or inflated billing, and drafting disputes. Every consequenti
 action is sealed in a tamper-evident, HMAC-signed audit dossier, and no autonomous
 decision ever spends money.
 
-The system is built, tested (**57 passing tests**), and runs end-to-end offline with
+The system is built, tested (**63 passing tests**), and runs end-to-end offline with
 no GPU, no network, and no API key. Every heavy component — the self-hosted language
 model, the graph database, the vector store — is local-first with a tested pure-Python
 fallback, so the pipeline is fully demonstrable on any machine and lights up for real
@@ -183,10 +183,10 @@ made about real-world performance.
 - All data is **synthetic**; no real payments are executed and no cardholder data is used.
 - **No compliance certification** is claimed — the fraud/compliance framing is a design
   target, kept deliberately honest.
-- The real Ollama / vLLM / Kùzu / Chroma backends are validated on the demo laptop; in
-  the CI-free offline mode used by the 57-test suite, each runs through its tested
-  pure-Python fallback. On-laptop validation of the live backends is the one remaining
-  hands-on step.
+- The real Ollama / vLLM / Kùzu / Chroma backends each have a tested pure-Python
+  fallback, and it is those fallbacks the 63-test suite exercises. The **live** backends
+  have **not** yet been run on the demo laptop — that on-laptop validation is the one
+  remaining hands-on step.
 - The language-model hooks are wired and offline-tested; live-model uplift over the
   heuristic baseline is future measurement work.
 

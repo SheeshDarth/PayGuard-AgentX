@@ -20,12 +20,15 @@
 
 ## Test coverage
 
-`pytest` — **57 passing** across `test_dq_engine`, `test_pipeline`, `test_foundation` (Week 1),
-`test_week2`, `test_week3`. The Phase-1 deterministic core and the HMAC algorithm are
-extend-only and were not rewritten during the scale-up.
+`pytest` — **63 passing** across `test_dq_engine`, `test_pipeline` (incl. the end-to-end
+`main.py` demo), `test_foundation` (Week 1), `test_week2`, `test_week3`, `test_mule`
+(money-muling detectors) and `test_ring_auditor` (Ring-Auditor agent). The Phase-1
+deterministic core and the HMAC algorithm are extend-only and were not rewritten.
 
 ## Honest-status note
 
-Ollama, Kùzu, and Chroma real backends are validated on the demo laptop; in this repo's
-CI-free offline mode each has a tested pure-Python fallback that the 57-test suite exercises.
-No production/compliance certification is claimed — the compliance framing is a design target.
+Ollama/vLLM, Kùzu, and Chroma each have a **tested pure-Python fallback**, and it is those
+fallbacks the 63-test suite exercises — the suite runs with no GPU, no network and no keys.
+The **live** backends have not yet been validated on the demo laptop; that remains an open
+step. No production/compliance certification is claimed — the compliance framing is a
+design target, kept deliberately honest.

@@ -182,3 +182,26 @@ def test_eval_harness_produces_metrics():
     assert 0.0 <= r["restock"]["accuracy"] <= 1.0
     assert 0.0 <= r["invoice"]["accuracy"] <= 1.0
     assert r["restock"]["n"] >= 20
+
+
+def test_main_demo_exercises_the_full_supervised_system():
+    """The CLI demo is the project's front door -- it must run the supervised
+    route (critics, regulatory, network-fraud), not just the bare core loop."""
+    import main as demo
+    state = demo.main()
+
+    assert state["route"] == "full"                 # supervisor, not sequential runner
+    assert state["po_draft"] is not None            # retail branch reached
+    assert state["payment_flags"]                   # audit branch reached
+    assert state["critic_reviews"]                  # reflection loop ran
+    assert state["regulatory_citations"]            # RAG clause citation ran
+    assert state["mule_rings"]                      # network-fraud layer ran
+    assert "hitl_queue" in state and "ring_hitl" in state
+
+    # False-positive control: the payroll run must never be flagged as a mule.
+    assert all(a["account_id"] != "PAYROLL"
+               for a in state["mule_suspicious_accounts"])
+
+    # Every consequential action is sealed and verifiable.
+    assert state["dossiers"]
+    assert all(audit.verify_dossier_dict(d) for d in state["dossiers"])
