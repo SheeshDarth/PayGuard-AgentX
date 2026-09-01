@@ -1,10 +1,6 @@
 # ── Core runtime (imported by the current Phase-1 scaffolding) ──────────────
 pydantic>=2.7.0
 
-# ── Agent orchestration ─────────────────────────────────────────────────────
-# Optional at runtime: run_pipeline() works without it; build_graph() needs it.
-langgraph>=0.1.0
-
 # ── Dev / test ──────────────────────────────────────────────────────────────
 pytest>=8.0.0
 rich>=13.7.0
@@ -16,31 +12,4 @@ pandas>=2.2.0
 networkx>=3.2          # fraud-network graph (offline)
 matplotlib>=3.8.0      # static graph render; UI degrades to an edge table if absent
 
-# -- Phase 2 (live LLM; optional -- offline fallback runs without these) --
-# Self-hosted only (course constraint): Ollama or vLLM, called over local HTTP.
-# No cloud-provider SDK is required or used.
-python-dotenv>=1.0.1
-
-# ── Planned (uncomment as each phase lands — kept out of the install until used)
-# Phase 2 — LLM reasoning inside agents:
-#   langchain>=0.2.0
-#   langchain-google-genai>=1.0.0
-#   litellm>=1.40.0
-#   google-generativeai>=0.7.0
-#   pandas>=2.2.0                 # statistical demand forecasting
-#   python-dotenv>=1.0.1          # secrets / config management
-# Phase 3 — Regulatory-Auditor RAG:
-#   chromadb>=0.5.0
-# Phase 4 — War-Room dashboard:
-#   streamlit>=1.35.0
-#   networkx>=3.3
-
-# -- Scale-up (local-first; optional -- offline fallbacks run without these) --
-# ollama app + 'ollama pull phi4-mini'   # local LLM runtime
-# kuzu>=0.4.0                            # embedded graph DB (Cypher)
-# chromadb>=0.5.0                        # embedded vector store
-# sentence-transformers>=3.0.0           # CPU MiniLM embeddings
-# langgraph-supervisor                   # dynamic multi-agent routing
-# langgraph-checkpoint-sqlite            # short-term run memory
-# mcp>=1.0.0                             # MCP tool server
-# streamlit>=1.35.0                      # dashboard
+# Optional local-backend dependencies are listed in requirements-live.txt.

@@ -113,7 +113,8 @@ def main():
     print("Invoice audit     (n=%d): acc=%.3f" % (iv["n"], iv["accuracy"]))
     ag = r["agentic"]
     print("Plan-revision rate       : %.3f (critic recall %.3f)" % (ag["plan_revision_rate"], ag["critic_recall"]))
-    print("Escalation miss rate     : %.3f (auto-approved %d)" % (ag["escalation_miss_rate"], ag["auto_approved"]))
+    print("Escalation miss rate     : %.3f (auto-executed %d; all consequential actions are human-gated)"
+          % (ag["escalation_miss_rate"], ag["auto_approved"]))
     mu = r["mule"]
     print("Mule ring recall         : %.3f (%d/%d planted rings; payroll FP=%s)"
           % (mu["ring_recall"], mu["detected_rings"], mu["planted_rings"], mu["payroll_false_positive"]))

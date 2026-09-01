@@ -24,11 +24,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.agents.orchestrator import run_supervised   # noqa: E402
 from src.core import audit                            # noqa: E402
+from src.core.decisions import DecisionStore         # noqa: E402
 from src.core.memory import Memory                    # noqa: E402
 from src.utils.retail_simulator import RetailSimulator  # noqa: E402
 
 st.set_page_config(page_title="PayGuard-AgentX", layout="wide",
                    initial_sidebar_state="expanded")
+
+decision_store = DecisionStore()
 
 
 # ----------------------------------------------------------------- helpers
@@ -85,6 +88,42 @@ def build_state(n_sales, n_low, clean_inv, dup_inv, tampered, muling):
     return state
 
 
+def hydrate_decisions(state):
+    """Apply durable operator decisions to the current in-memory run."""
+    current_subjects = set()
+    if state.get("po_draft"):
+        current_subjects.add(("PO", state["po_draft"].get("po_id")))
+    current_subjects.update(("DISPUTE", d.get("dispute_id"))
+                            for d in state.get("dispute_drafts", []))
+    current_subjects.update(("RING", r.get("ring_id"))
+                            for r in state.get("mule_rings", []))
+    records = [r for r in decision_store.latest()
+               if (r["subject_kind"], r["subject_id"]) in current_subjects]
+    state["decisions"] = records
+    for record in records:
+        kind, subject_id, action = (record["subject_kind"], record["subject_id"], record["action"])
+        if kind == "PO" and state.get("po_draft", {}).get("po_id") == subject_id:
+            state["po_draft"]["status"] = action
+        for dispute in state.get("dispute_drafts", []):
+            if kind == "DISPUTE" and dispute.get("dispute_id") == subject_id:
+                dispute["status"] = action
+        for ring in state.get("mule_rings", []):
+            if kind == "RING" and ring.get("ring_id") == subject_id:
+                ring["disposition"] = action
+        dossier = json.loads(record["dossier"])
+        if dossier.get("dossier_id") not in {d.get("dossier_id") for d in state.setdefault("dossiers", [])}:
+            state["dossiers"].append(dossier)
+    return state
+
+
+def record_disposition(state, kind, subject_id, action):
+    record = decision_store.record(kind, subject_id, action)
+    state = hydrate_decisions(state)
+    state.setdefault("logs", []).append(
+        "Operator: " + kind + " " + subject_id + " -> " + action + " (signed disposition).")
+    return state
+
+
 # ----------------------------------------------------------------- sidebar
 with st.sidebar:
     st.header("Scenario builder")
@@ -108,14 +147,18 @@ if reset:
 if run:
     st.session_state["state"] = run_supervised(
         build_state(n_sales, n_low, clean_inv, dup_inv, tampered, muling), memory=Memory())
+    st.session_state["state"] = hydrate_decisions(st.session_state["state"])
 
 st.title("PayGuard-AgentX -- operator workbench")
-st.caption("Guarded multi-agent retail + procurement + network-fraud copilot. Humans approve money.")
+st.caption("Guarded multi-agent retail + procurement + network-fraud copilot. "
+           "Humans approve money; approval records the decision but executes no payment.")
 
 state = st.session_state.get("state")
 if not state:
     st.info("Configure a scenario in the sidebar and click Run supervised pipeline.")
     st.stop()
+
+state = hydrate_decisions(state)
 
 accounts = state.get("mule_suspicious_accounts", [])
 rings = state.get("mule_rings", [])
@@ -168,9 +211,10 @@ with tab_overview:
         report = {
             "summary": {"route": state.get("route"), "suspicious_accounts": len(accounts),
                        "fraud_rings": len(rings), "dossiers_valid": verified,
-                       "dossiers_total": len(dossiers)},
-            "suspicious_accounts": accounts, "fraud_rings": rings,
-            "dispositions": st.session_state.get("dispositions", {}),
+                       "dossiers_total": len(dossiers),
+                       "decisions": state.get("decisions", [])},
+                       "suspicious_accounts": accounts, "fraud_rings": rings,
+            "dispositions": state.get("decisions", []),
         }
         st.download_button("Download investigation report (JSON)",
                            json.dumps(report, indent=2, default=str),
@@ -191,35 +235,44 @@ with tab_pipeline:
                 st.text("  x %s: %s" % (r.get("kind", "?"), r.get("note", "")))
     with right:
         st.subheader("HITL approval queue")
-        disp = st.session_state.setdefault("dispositions", {})
         q = state.get("hitl_queue", {"auto": [], "human": []})
         st.markdown("**Needs human approval** (%d)" % len(q["human"]))
         for it in q["human"]:
-            st.warning("%s %s (conf %s)" % (it["kind"], it["id"], it.get("confidence")))
+            prior = next((d for d in state.get("decisions", [])
+                          if d["subject_kind"] == it["kind"] and d["subject_id"] == it["id"]), None)
+            status = prior["action"] if prior else "PENDING"
+            st.warning("%s %s (conf %s) -- %s" %
+                       (it["kind"], it["id"], it.get("confidence"), status))
             k = "%s_%s" % (it["kind"], it["id"])
             b1, b2, _ = st.columns([1, 1, 3])
-            if b1.button("Approve", key="ap_" + k):
-                disp[k] = "APPROVED"
-            if b2.button("Reject", key="rj_" + k):
-                disp[k] = "REJECTED"
-            if disp.get(k):
-                st.caption("decision: **%s**" % disp[k])
-        st.markdown("**Auto-approved** (%d)" % len(q["auto"]))
+            if b1.button("Approve", key="ap_" + k, disabled=bool(prior)):
+                st.session_state["state"] = record_disposition(state, it["kind"], it["id"], "APPROVED")
+                st.rerun()
+            if b2.button("Reject", key="rj_" + k, disabled=bool(prior)):
+                st.session_state["state"] = record_disposition(state, it["kind"], it["id"], "REJECTED")
+                st.rerun()
+        st.markdown("**Auto-executed** (%d)" % len(q["auto"]))
+        if not q["auto"]:
+            st.caption("None. All consequential actions require human approval.")
         for it in q["auto"]:
             st.success("%s %s (conf %s)" % (it["kind"], it["id"], it.get("confidence")))
 
         st.subheader("Fraud-ring queue")
         rq = state.get("ring_hitl", {"review": [], "monitor": []})
         for it in sorted(rq["review"], key=lambda x: x["risk_score"], reverse=True):
-            st.error("REVIEW %s  risk %.1f  (%s)" % (it["ring_id"], it["risk_score"], it["pattern_type"]))
+            prior = next((d for d in state.get("decisions", [])
+                          if d["subject_kind"] == "RING" and d["subject_id"] == it["ring_id"]), None)
+            status = prior["action"] if prior else "PENDING"
+            st.error("REVIEW %s  risk %.1f  (%s) -- %s" %
+                     (it["ring_id"], it["risk_score"], it["pattern_type"], status))
             rk = "ring_" + it["ring_id"]
             b1, b2, _ = st.columns([1, 1, 3])
-            if b1.button("Escalate (SAR)", key="es_" + rk):
-                disp[rk] = "ESCALATED"
-            if b2.button("Dismiss", key="di_" + rk):
-                disp[rk] = "DISMISSED"
-            if disp.get(rk):
-                st.caption("decision: **%s**" % disp[rk])
+            if b1.button("Escalate (SAR)", key="es_" + rk, disabled=bool(prior)):
+                st.session_state["state"] = record_disposition(state, "RING", it["ring_id"], "ESCALATED")
+                st.rerun()
+            if b2.button("Dismiss", key="di_" + rk, disabled=bool(prior)):
+                st.session_state["state"] = record_disposition(state, "RING", it["ring_id"], "DISMISSED")
+                st.rerun()
         for it in sorted(rq["monitor"], key=lambda x: x["risk_score"], reverse=True):
             st.info("monitor %s  risk %.1f  (%s)" % (it["ring_id"], it["risk_score"], it["pattern_type"]))
         if not rq["review"] and not rq["monitor"]:

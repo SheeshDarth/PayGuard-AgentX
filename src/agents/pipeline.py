@@ -168,7 +168,8 @@ def payment_auditor(state: dict, tolerance: float = 0.02) -> dict:
             disputes.append({"dispute_id": f"DIS_{inv['invoice_id']}", "invoice_id": inv["invoice_id"],
                              "po_id": po["po_id"], "reason": "Invoice amount exceeds PO estimate beyond tolerance",
                              "claimed_amount": inv["amount"], "expected_amount": expected,
-                             "proposed_verdict": "NEEDS_REVIEW", "requires_human_approval": True})
+                             "proposed_verdict": "NEEDS_REVIEW", "requires_human_approval": True,
+                             "status": "DRAFT"})
             if llm.is_live():
                 # Narrative only. The deterministic `reason` stays authoritative and
                 # signed; model prose goes in a separate, bounded, clearly-labelled

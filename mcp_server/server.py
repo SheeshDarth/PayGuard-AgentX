@@ -20,8 +20,8 @@ def build_server():
         return kit.dq_validate(kind, raw_json)
 
     @server.tool()
-    def sql_query(query: str):
-        return kit.sql_query(query)
+    def sql_query(query: str, params: list = None):
+        return kit.sql_query(query, tuple(params or ()))
 
     @server.tool()
     def graph_query(kind: str, supplier_id: str = ""):
@@ -34,6 +34,14 @@ def build_server():
     @server.tool()
     def case_recall(text: str, k: int = 3):
         return kit.case_recall(text, k)
+
+    @server.tool()
+    def audit_sign(dossier_id: str, subject_id: str, summary: str, payload: dict):
+        return kit.audit_sign(dossier_id, subject_id, summary, payload)
+
+    @server.tool()
+    def audit_verify(dossier: dict):
+        return kit.audit_verify(dossier)
 
     @server.tool()
     def mule_ring_scan(transactions: list):

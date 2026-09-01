@@ -141,6 +141,7 @@ class AgentDecision(BaseModel):
     summary: str
     confidence: float = Field(..., ge=0.0, le=1.0)
     requires_human_approval: bool = True
+    status: Literal['DRAFT', 'APPROVED', 'REJECTED'] = 'DRAFT'
 
 
 class NegotiationTurn(BaseModel):

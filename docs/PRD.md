@@ -55,14 +55,14 @@ A single small team cannot watch all three continuously. PayGuard-AgentX puts a 
 ### EPIC 5 — Tamper-evident audit trail ✅ Phase 1
 - **FEAT-5.1** Emit an HMAC-SHA256 signed evidence dossier for each PO draft and dispute draft, verifiable with the server key.
 
-### EPIC 6 — LLM reasoning upgrade 🔜 Phase 2
+### EPIC 6 — LLM reasoning upgrade ✅ Implemented
 - **FEAT-6.1** Replace heuristic forecasting/routing with a self-hosted LLM (Ollama / vLLM) at the marked `LLM-HOOK` points, keeping the same agent interfaces.
 
-### EPIC 7 — Regulatory & self-healing 🔜 Phase 3
+### EPIC 7 — Regulatory & self-healing 🟡 Scope-bounded
 - **FEAT-7.1** RAG check of invoices against supplier-contract / tax rules (Regulatory-Auditor).
 - **FEAT-7.2** Suggest (never auto-apply) a parser patch when a supplier changes invoice format (Self-Healing-Repair).
 
-### EPIC 8 — War-Room dashboard 🔜 Phase 4
+### EPIC 8 — War-Room dashboard ✅ Implemented
 - **FEAT-8.1** Streamlit dashboard: live record stream, agent log, pending PO/dispute approvals, and one-click approve/reject.
 
 ---

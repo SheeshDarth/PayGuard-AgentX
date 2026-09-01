@@ -17,6 +17,7 @@ venv.bak/
 # ChromaDB / Vector Store cache
 .chroma/
 chroma_db/
+.payguard/
 
 # IDEs
 .vscode/

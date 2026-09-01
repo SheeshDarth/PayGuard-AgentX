@@ -67,17 +67,17 @@ If `phi4-mini` is unreachable, an agent returns a clearly-marked stub and the ru
    PayGuardDQ                                    ▼              ▼
                                             PO-Critic     Dispute-Critic   (reflection loops)
                                                  │              │
-                                        confidence-scored drafts → HITL queue / auto-execute
+                                        confidence-scored drafts → mandatory HITL queue
                                                                      └──► HMAC-signed dossier
 ```
 
 - **Memory:** short-term = LangGraph `SqliteSaver`; long-term = Chroma `case_history`; knowledge = Kùzu graph; regulatory = Chroma `regulatory_docs`.
 - **Reflection:** PO-Critic and Dispute-Critic review drafts (same model, critic prompt) before the HITL queue.
 - **Negotiation:** Demand-Forecaster ↔ Stock-Watcher exchange reasoning for up to 2 rounds when they disagree; the transcript is signed into the dossier.
-- **Confidence-based HITL:** every consequential draft emits `confidence`; low-confidence/high-value → human queue, high-confidence/low-value → auto-execute.
+- **Human-gated HITL:** every consequential draft emits `confidence` for triage, but every PO and dispute remains in the human queue. No payment or supplier submission is executed.
 
 ---
 
 ## 6. Status
 
-All four scale-up weeks are implemented and tested offline (68 passing): Week 1 — self-hosted LLM layer (Ollama/vLLM), extended schemas, SQLite/Kùzu/Chroma stores with fallbacks, audit coverage; Week 2 — dynamic-routing supervisor, Regulatory-Auditor, ToolKit + MCP server, SqliteSaver checkpoint; Week 3 — PO/Dispute critics, Demand↔Stock negotiation, confidence-based HITL, structured trace, agentic eval; Week 4 — Streamlit operator dashboard, rubric-traceability and SDG docs. A later **network-fraud layer** adds money-muling detection (`src/core/mule/`: cycle / smurfing / shell + multi-signal scorer) surfaced by the **Ring-Auditor** agent as HMAC-signed, HITL-routed fraud rings, with a Cypher knowledge-graph artifact. The real Ollama/Kùzu/Chroma backends need on-laptop validation; the tested fallbacks are what CI-free offline mode exercises. Nothing here is production-audited — the compliance framing is a design target, kept deliberately honest.
+All four scale-up weeks are implemented and tested offline (72 passing): Week 1 — self-hosted LLM layer (Ollama/vLLM), extended schemas, SQLite/Kùzu/Chroma stores with fallbacks, audit coverage; Week 2 — dynamic-routing supervisor, Regulatory-Auditor, ToolKit + MCP server, SqliteSaver checkpoint; Week 3 — PO/Dispute critics, Demand/Stock negotiation, mandatory human HITL, structured trace, agentic eval; Week 4 — Streamlit operator dashboard, rubric-traceability and SDG docs. A later **network-fraud layer** adds money-muling detection (`src/core/mule/`: cycle / smurfing / shell + multi-signal scorer) surfaced by the **Ring-Auditor** agent as HMAC-signed, HITL-routed fraud rings, with a Cypher knowledge-graph artifact. The real Ollama/Kùzu/Chroma backends need on-laptop validation; the tested fallbacks are what CI-free offline mode exercises. Nothing here is production-audited — the compliance framing is a design target, kept deliberately honest.

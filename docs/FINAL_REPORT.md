@@ -16,7 +16,7 @@ catching duplicate or inflated billing, and drafting disputes. Every consequenti
 action is sealed in a tamper-evident, HMAC-signed audit dossier, and no autonomous
 decision ever spends money.
 
-The system is built, tested (**68 passing tests**), and runs end-to-end offline with
+The system is built, tested (**72 passing tests**), and runs end-to-end offline with
 no GPU, no network, and no API key. Every heavy component — the self-hosted language
 model, the graph database, the vector store — is local-first with a tested pure-Python
 fallback, so the pipeline is fully demonstrable on any machine and lights up for real
@@ -89,7 +89,7 @@ critics and the human-in-the-loop escalation.
                                                                  (vs PO)             (Dispute-Critic)    (clause citation)
                                                                                             │
                                                                                             ▼
-                                                              confidence-scored drafts → HITL queue / auto-execute
+                                                              confidence-scored drafts → mandatory HITL queue
                                                                                             │
                                                                                             ▼
                                                                           HMAC-SHA256 signed evidence dossiers
@@ -125,7 +125,7 @@ than the two-model setup would have been.
 |---|---|---|
 | User–agent interaction | Streamlit dashboard: build a batch, run the supervisor, work the HITL queue, one-click HMAC verify + tamper demo | `dashboard/app.py` |
 | Language-model integration | Self-hosted Ollama/vLLM at each `LLM-HOOK`; deterministic offline stub otherwise | `src/core/llm.py` |
-| Tools (MCP + custom) | 7 schema'd tools (DQ, SQL, graph, doc, case, sign, verify) as a ToolKit and over an MCP server | `src/agents/tools.py`, `mcp_server/server.py` |
+| Tools (MCP + custom) | 8 schema'd tools (DQ, SQL, graph, doc, case, sign, verify, mule-ring scan) as a ToolKit and over an MCP server | `src/agents/tools.py`, `mcp_server/server.py` |
 | Memory & knowledge | SQLite checkpoint · Chroma `case_history` + `regulatory_docs` · Kùzu graph | `src/core/{checkpoint,memory,graph_store,relational}.py` |
 | Orchestration | Dynamic-routing supervisor | `src/agents/orchestrator.py` |
 | Multi-agent *(expected)* | 7 agents + 2 critics | `src/agents/` |
@@ -148,7 +148,7 @@ Full mapping: `docs/RUBRIC_TRACEABILITY.md`.
   autonomous financial liability decision is made.
 - **Calibrated autonomy.** Each consequential draft carries a confidence; low-confidence
   or high-value drafts route to the human queue, high-confidence low-value ones can
-  auto-execute.
+  human review. No payment or supplier submission is executed.
 - **Degrade gracefully.** If the model is unreachable, agents receive a clearly-marked
   offline stub — the deterministic conclusion is never skipped or silently replaced.
 
@@ -167,7 +167,7 @@ Current baseline (deterministic core, offline stub for language reasoning):
 | Money-muling ring recall (2 planted rings) | 1.000 (payroll false-positive: none) |
 | Plan-revision rate (critic activity) | 0.500 |
 | Critic recall | 1.000 |
-| Escalation miss rate | 0.000 (6 auto-approved) |
+| Escalation miss rate | 0.000 (all consequential actions human-gated) |
 
 Reproduce with `python evaluation/run_eval.py`. The restock numbers reflect the
 heuristic forecaster; the harness is designed so the same metrics can be re-run after
@@ -184,7 +184,7 @@ made about real-world performance.
 - **No compliance certification** is claimed — the fraud/compliance framing is a design
   target, kept deliberately honest.
 - The real Ollama / vLLM / Kùzu / Chroma backends each have a tested pure-Python
-  fallback, and it is those fallbacks the 68-test suite exercises. The **live** backends
+  fallback, and it is those fallbacks the 72-test suite exercises. The **live** backends
   have **not** yet been run on the demo laptop — that on-laptop validation is the one
   remaining hands-on step.
 - The language-model hooks are wired and offline-tested; live-model uplift over the

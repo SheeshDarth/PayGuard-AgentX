@@ -13,11 +13,13 @@
 | Data validation | Pydantic v2 | Active |
 | Agent orchestration | LangGraph (`StateGraph`) | Active (optional import; sequential fallback) |
 | Audit integrity | `hmac` + `hashlib` (HMAC-SHA256) | Active |
-| LLM reasoning | Self-hosted Ollama (`phi4-mini`) / vLLM (at `LLM-HOOK` points) | Phase 2 |
-| Regulatory RAG | ChromaDB | Phase 3 |
-| Dashboard | Streamlit | Phase 4 |
+| LLM reasoning | Self-hosted Ollama (`phi4-mini`) / vLLM (at `LLM-HOOK` points) | Implemented with offline fallback |
+| Regulatory RAG | ChromaDB | Implemented with keyword fallback |
+| Dashboard | Streamlit | Implemented |
 
-The scaffolding runs on **pydantic alone**. `langgraph` is needed only for `build_graph()`; `run_pipeline()` is a dependency-free sequential runner with identical node order.
+The offline installation runs without live-backend packages. `langgraph`, MCP,
+Kùzu, Chroma, and embeddings are available through `requirements-live.txt`;
+the supervised runner remains dependency-light with tested fallbacks.
 
 ---
 

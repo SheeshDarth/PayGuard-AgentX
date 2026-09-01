@@ -46,15 +46,15 @@ def test_negotiation_triggers_and_records():
     assert state["negotiations"][0]["rounds"] == 2
 
 
-def test_hitl_routes_auto_and_human():
-    assert route_decision(0.95, 100.0) == "AUTO"
+def test_hitl_routes_all_consequential_actions_to_human():
+    assert route_decision(0.95, 100.0) == "HUMAN"
     assert route_decision(0.6, 100.0) == "HUMAN"
     assert route_decision(0.95, 9000.0) == "HUMAN"
     state = {"po_draft": {"po_id": "PO_1", "total_estimated_cost": 100.0, "confidence": 0.95},
              "dispute_drafts": [{"dispute_id": "D1", "claimed_amount": 9000.0, "confidence": 0.9}]}
     state = escalate(state)
-    assert len(state["hitl_queue"]["auto"]) == 1
-    assert len(state["hitl_queue"]["human"]) == 1
+    assert len(state["hitl_queue"]["auto"]) == 0
+    assert len(state["hitl_queue"]["human"]) == 2
 
 
 def test_tracer_records_events():

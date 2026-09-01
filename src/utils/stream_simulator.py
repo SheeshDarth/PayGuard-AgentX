@@ -7,7 +7,7 @@ import json
 import time
 import random
 import hashlib
-from datetime import datetime
+from datetime import datetime, timezone
 
 class StreamSimulator:
     
@@ -19,7 +19,7 @@ class StreamSimulator:
         tx_id = f"TXN_{int(time.time() * 1000)}_{random.randint(100, 999)}"
         sender = random.choice(StreamSimulator.SAMPLE_ACCOUNTS)
         receiver = random.choice([acc for acc in StreamSimulator.SAMPLE_ACCOUNTS if acc != sender])
-        timestamp = datetime.utcnow().isoformat() + "Z"
+        timestamp = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         
         if scenario == "CLEAN":
             amount = round(random.uniform(10.0, 5000.0), 2)
