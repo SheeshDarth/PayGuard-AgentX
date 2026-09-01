@@ -6,7 +6,7 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Orchestration: LangGraph](https://img.shields.io/badge/Orchestration-LangGraph-orange.svg)](https://github.com/langchain-ai/langgraph)
 [![LLM: self-hosted (Ollama/vLLM)](https://img.shields.io/badge/LLM-self--hosted%20Ollama%2FvLLM-green.svg)](src/core/llm.py)
-[![Tests: 72 passing](https://img.shields.io/badge/tests-72%20passing-brightgreen.svg)](tests/)
+[![Tests: passing](https://img.shields.io/badge/tests-passing-brightgreen.svg)](tests/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
@@ -20,7 +20,7 @@
 
 They meet at one natural loop: the **purchase order → supplier invoice → payment** cycle. ShelfSense decides *what to buy*; PayGuard *guards the data going in and audits the money coming back*. The deterministic PayGuardDQ engine is a **tool the agents call** — not a passive validator — which is what makes the loop genuinely *agentic*.
 
-> **Honest status:** the full guarded multi-agent loop is built, tested (72 passing), and runs end-to-end offline with **no GPU, no network, and no API key**. Every heavy component (self-hosted LLM, Kùzu graph, Chroma vectors) is local-first with a tested pure-Python fallback. Nothing here is production-audited — the compliance/fraud language describes the design target, not a certified system, and all data is synthetic.
+> **Honest status:** the guarded multi-agent loop runs end-to-end offline with **no GPU, no network, and no API key**. The Streamlit product shell separates Action Inbox, Operations, Analyst Workspace, Cases, Evidence, and Settings. PostgreSQL/OIDC/live backends are installable paths; SQLite and deterministic fallbacks remain the guaranteed demo path. Nothing here is production-audited and all data is synthetic.
 
 ---
 
@@ -28,13 +28,13 @@ They meet at one natural loop: the **purchase order → supplier invoice → pay
 
 | Capability | Implementation | Artifact |
 |---|---|---|
-| **User–agent interaction** | Streamlit operator dashboard: build a batch, run the supervisor, work the HITL queue, one-click HMAC verify + tamper demo | [`dashboard/app.py`](dashboard/app.py) |
+| **User–agent interaction** | Streamlit product shell: run a preset, prioritize the Action Inbox, review cases, and inspect signed evidence | [`dashboard/app.py`](dashboard/app.py) |
 | **Language model** | Self-hosted only — **Ollama** (`phi4-mini`) or **vLLM**, called at each `LLM-HOOK`; deterministic offline stub otherwise | [`src/core/llm.py`](src/core/llm.py) |
 | **Tools (MCP + custom)** | 8 schema'd tools (DQ / relational / graph / doc / case / sign / verify / mule-ring scan) as a ToolKit and over an MCP server | [`tools.py`](src/agents/tools.py), [`mcp_server/`](mcp_server/server.py) |
 | **Memory & knowledge** | SQLite checkpoint · Chroma `case_history` + `regulatory_docs` RAG · Kùzu (Cypher) graph | [`core/`](src/core/) |
 | **Orchestration** | Dynamic-routing supervisor (`restock_only` / `audit_only` / `full` / `noop`) | [`orchestrator.py`](src/agents/orchestrator.py) |
 | **Multi-agent** | 7 agents + PO/Dispute critics | [`agents/`](src/agents/) |
-| **Feedback loops** | Reflection critics · Demand↔Stock negotiation · confidence-based HITL | [`critics.py`](src/agents/critics.py), [`negotiation.py`](src/agents/negotiation.py), [`hitl.py`](src/agents/hitl.py) |
+| **Feedback loops** | Reflection critics · Demand↔Stock negotiation · human-only HITL | [`critics.py`](src/agents/critics.py), [`negotiation.py`](src/agents/negotiation.py), [`hitl.py`](src/agents/hitl.py) |
 | **Network-level fraud** | Money-muling graph scan — circular billing (cycles), invoice structuring (smurfing), shell suppliers — with multi-signal 0–100 scoring, false-positive suppression, and a Cypher knowledge-graph artifact | [`src/core/mule/`](src/core/mule/) |
 
 See [docs/RUBRIC_TRACEABILITY.md](docs/RUBRIC_TRACEABILITY.md) for the full mapping and [docs/SDG_ALIGNMENT.md](docs/SDG_ALIGNMENT.md) for SDG 16/12/9.
@@ -68,12 +68,12 @@ source venv/bin/activate           # Windows: venv\Scripts\activate
 pip install -r requirements.txt    # core scaffolding needs only pydantic
 
 python main.py                     # end-to-end demo (offline, no key needed)
-pytest -q                          # 72 tests
+pytest -q                          # full test suite
 python evaluation/run_eval.py      # evaluation baseline + agentic metrics
 streamlit run dashboard/app.py     # operator dashboard -> http://localhost:8501
 ```
 
-The dashboard persists operator dispositions in `.payguard/decisions.sqlite` and
+The dashboard persists operator dispositions in `.payguard/workspace.sqlite` and
 signs them with HMAC-SHA256. Approval records a decision only; it never executes
 a payment or sends a purchase order. Optional local-backend checks are available
 with `pip install -r requirements-live.txt` followed by
@@ -87,6 +87,9 @@ with `pip install -r requirements-live.txt` followed by
 
 ```
 dashboard/app.py            # Streamlit operator dashboard (user-agent interaction)
+dashboard/pages/             # Operations, Analyst, Cases, Evidence, Settings pages
+dashboard/services/          # configuration, auth, workflows, storage, decisions
+dashboard/ui/                # semantic theme and reusable product components
 mcp_server/server.py        # MCP tool server exposing the ToolKit
 src/
   models/schemas.py         # Pydantic v2 models (retail + procurement + legacy)

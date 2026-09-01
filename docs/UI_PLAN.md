@@ -31,18 +31,17 @@
 | **Visual hierarchy / progressive disclosure** (fintech UX) | Concise summaries first, expandable detail on demand | KPI row → panels → `st.expander` for payloads (already partly done) |
 | **Case disposition** (Unit21 case mgmt) | Analyst approves / escalates with an audit trail | Approve / escalate buttons on HITL items; every decision already HMAC-signed |
 
-## 3. Information architecture (tabs)
+## 3. Information architecture (product pages)
 
 ```
 ┌ Header: PayGuard-AgentX — operator workbench ───────────────────────────┐
 │ Sidebar: scenario builder (retail batch, invoices, + Money-muling toggle)│
-├─ Tab 1  Overview      KPI cards: accounts, flagged, rings, HMAC-verified │
-│                       + per-typology scorecards (cycle/smurfing/shell)    │
-├─ Tab 2  Pipeline      Agent trace timeline + HITL approval queue          │
-│                       (sorted by risk; approve/escalate buttons)          │
-├─ Tab 3  Fraud Network Node-link graph of flagged rings (READ-ONLY);       │
-│                       node colour=risk, click → node-detail panel         │
-├─ Tab 4  Evidence      Signed dossiers; one-click HMAC verify + tamper demo│
+├─ Action Inbox       prioritized actions + one primary Run analysis CTA    │
+├─ Operations         stock health, POs, invoices, approval state           │
+├─ Analyst Workspace  alert explanations, rings, accounts, transactions     │
+├─ Cases              searchable investigations and decision history        │
+├─ Evidence           searchable signed records + progressive disclosure     │
+├─ Settings           workspace, user, role, storage, runtime status         │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -69,22 +68,24 @@
   transaction set. Pre-filter to `suspicion_score > 0`.
 - Keep the pipeline result in `session_state` so tab switches don't recompute.
 
-## 6. Closing the gap the review found
+## 6. Current implementation status
 
-Today the dashboard feeds only invoices, so Ring-Auditor shows **0 rings**. Add a
-**"Money-muling scenario"** sidebar toggle that injects a synthetic fraud graph
-(one cycle + one shell + a payroll trap) into `state["mule_transactions"]`, so the
-Fraud Network tab and per-typology scorecards actually light up. This makes the
-strongest new feature demoable end-to-end.
+The new product shell now uses an Action Inbox, separate Operations and Analyst
+Workspace pages, searchable Cases and Evidence pages, seeded scenario presets,
+and semantic light/dark theme tokens. The dashboard feeds a seeded fraud graph so
+the analyst workflow is demoable end-to-end. The former four-tab layout is no
+longer the visible entry point.
+
+The **Fraud-ring investigation** preset injects a synthetic fraud graph (one cycle,
+one shell, and a payroll trap) into the supervised run. This keeps the strongest
+feature demoable without adding another toggle to the primary workflow.
 
 ## 7. Build phases
 
-1. **Refactor to tabs** + move the pipeline run into `session_state` (no behaviour change).
-2. **Money-muling scenario toggle** → populate `mule_transactions`; render `mule_rings`
-   + `ring_hitl` as a risk-sorted table (no graph yet). *Ships value immediately.*
-3. **Fraud-network graph** (networkx/matplotlib static first) + node-detail panel.
-4. **Polish:** per-typology KPI scorecards, approve/escalate buttons on HITL items,
-   risk-tier colour system, optional `streamlit-agraph` upgrade.
+1. **Product shell** → page navigation, Action Inbox, scenario presets, and accessible tokens.
+2. **Operations and Analyst workflows** → business-language summaries, queues, cases, and drill-downs.
+3. **Evidence and workspace persistence** → searchable evidence, SQLite fallback, PostgreSQL adapter.
+4. **Published team mode** → generic OIDC/SSO, roles, and deployment configuration.
 
 Each phase leaves a working `streamlit run`. No new backend, no API, no second process.
 

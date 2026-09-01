@@ -28,8 +28,14 @@ from src.core.decisions import DecisionStore         # noqa: E402
 from src.core.memory import Memory                    # noqa: E402
 from src.utils.retail_simulator import RetailSimulator  # noqa: E402
 
-st.set_page_config(page_title="PayGuard-AgentX", layout="wide",
-                   initial_sidebar_state="expanded")
+from dashboard.ui.inbox import render as render_inbox  # noqa: E402
+from dashboard.ui.navigation import shell  # noqa: E402
+
+# Product shell entry point. The legacy implementation below is retained only
+# as reference while all visible users go through the simplified inbox.
+_user, _storage = shell("Action Inbox", "See what needs your attention and run the next analysis.")
+render_inbox(_user, _storage)
+st.stop()
 
 decision_store = DecisionStore()
 

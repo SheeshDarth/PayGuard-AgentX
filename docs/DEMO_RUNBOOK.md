@@ -28,13 +28,13 @@ python -m streamlit run dashboard\app.py
 
 ## Walkthrough
 
-1. Keep the default scenario toggles enabled and click **Run pipeline**.
-2. In **Overview**, show the full route, suspicious accounts, fraud rings, and dossier count.
-3. In **Pipeline**, show rejected negative-unit and checksum-tampered records.
-4. Show the PO and dispute in the mandatory human approval queue.
-5. Approve or reject one item. Confirm that its status, trace entry, and signed disposition dossier appear.
-6. In **Fraud Network**, show the cycle and shell ring and the payroll false-positive control.
-7. In **Evidence**, enable **Tamper with payload** and show verification changing from valid to invalid.
+1. Open **Action Inbox**; keep **Procurement mismatch** selected and click **Run analysis**.
+2. Show the four completion steps, then open **Operations** to explain low stock, the suggested order, and the invoice mismatch.
+3. Return to **Action Inbox** and show the PO/dispute cards. Approve or reject one item; confirm the state persists after navigation or rerun.
+4. Select **Fraud-ring investigation**, run it, then open **Analyst Workspace** to show the plain-language alert before the technical network details.
+5. Open **Cases** to show the investigation record and **Evidence** to show signed dossiers and verification status.
+6. Under **Demo tools**, enable tampering and show verification changing from valid to invalid.
+7. Open **Settings** to explain demo mode, SQLite fallback, and the no-external-execution guarantee.
 
 Approval records a human disposition only. The demo never sends a PO, transfers money, or calls an external supplier.
 
@@ -52,7 +52,7 @@ Approval records a human disposition only. The demo never sends a PO, transfers 
 ## Submission checklist
 
 - Run the complete command sequence on the demo laptop.
-- Capture screenshots of all four dashboard tabs.
+- Capture screenshots of Action Inbox, Operations, Analyst Workspace, Cases, and Evidence.
 - Record Python and package versions.
 - Use a private `PAYGUARD_AUDIT_KEY`.
 - Keep synthetic-data and no-payment limitations in the presentation.
