@@ -1,4 +1,4 @@
-"""Durable, signed operator dispositions for the Streamlit workbench."""
+"""Durable, signed operator dispositions for the operator workbench."""
 
 import json
 import sqlite3

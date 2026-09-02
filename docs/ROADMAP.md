@@ -35,7 +35,7 @@
 
 ## ✅ Phase 4 — War-Room dashboard & benchmark (Weeks 7–8) — DONE / SCOPE-BOUNDED
 
-- [x] Streamlit dashboard: scenario builder, agent log, pending approval queues, signed evidence, and network view
+- [x] Web dashboard: demo scenarios, agent execution timeline, why-flagged panels, pending approval queues, signed evidence, and fraud relationship view
 - [ ] Reuse the team's existing retail React work (`retail-horizon-ai`, `swiggy_copilot`) for a polished front end if time allows
 - [ ] Final benchmark: accuracy, latency, token cost, self-healing suggestion acceptance rate
 - [ ] Demo video + slide deck (manual submission artifacts)
@@ -66,6 +66,6 @@
 - [x] Week 1 -- Ollama-first LLM layer; SQLite/Kuzu/Chroma stores; extended schemas; ARCHITECTURE.md
 - [x] Week 2 -- dynamic-routing supervisor (orchestrator.py); Regulatory-Auditor + seeded clauses; ToolKit tool registry + MCP server wrapper; SqliteSaver checkpointer factory
 - [x] Week 3 -- PO-Critic / Dispute-Critic reflection loops; Demand/Stock negotiation protocol; confidence-based HITL routing; SQLite trace logging; agentic eval metrics (plan-revision rate, escalation calibration)
-- [x] Week 4 -- Streamlit dashboard (`dashboard/app.py`: pipeline trace, HITL queue, one-click HMAC verify + tamper demo); `docs/RUBRIC_TRACEABILITY.md`; `docs/SDG_ALIGNMENT.md`
+- [x] Week 4 -- operator dashboard (`web/`: demo scenarios, agent timeline, why-flagged panels, HITL queue, one-click HMAC verify + tamper demo); `docs/RUBRIC_TRACEABILITY.md`; `docs/SDG_ALIGNMENT.md`
 
-> Kuzu (Cypher), Chroma, and Ollama code paths are written with offline fallbacks and need validation on the RTX 4050 laptop; the fallbacks are what the 72-test suite exercises. Remaining hands-on step: run `streamlit run dashboard/app.py` on the laptop and capture the demo.
+> Kuzu (Cypher), Chroma, and Ollama code paths are written with offline fallbacks and need validation on the RTX 4050 laptop; the fallbacks are what the 103-test suite exercises. Remaining hands-on step: run `python -m web.server` on the laptop and capture the demo screenshots.

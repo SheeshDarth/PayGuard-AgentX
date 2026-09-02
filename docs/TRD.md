@@ -15,7 +15,7 @@
 | Audit integrity | `hmac` + `hashlib` (HMAC-SHA256) | Active |
 | LLM reasoning | Self-hosted Ollama (`phi4-mini`) / vLLM (at `LLM-HOOK` points) | Implemented with offline fallback |
 | Regulatory RAG | ChromaDB | Implemented with keyword fallback |
-| Dashboard | Streamlit | Implemented |
+| Dashboard | HTML/CSS/JS on stdlib `http.server` | Implemented |
 
 The offline installation runs without live-backend packages. `langgraph`, MCP,
 Kùzu, Chroma, and embeddings are available through `requirements-live.txt`;
