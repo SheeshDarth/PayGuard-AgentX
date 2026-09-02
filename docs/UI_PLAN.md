@@ -1,5 +1,17 @@
 # 🖥️ UI Plan — PayGuard-AgentX Operator Workbench
 
+> **⚠️ SUPERSEDED — kept as a decision record.**
+> The UI was rebuilt as hand-written HTML/CSS/JS served by Python's stdlib
+> `http.server` (see [`web/`](../web/server.py) and the Dashboard row in
+> [ARCHITECTURE.md](ARCHITECTURE.md)). The *goal* below still holds — one command
+> on a cold clone shows the whole system, offline, with no `npm install` — and the
+> AML/fraud UI patterns in §2–§4 were carried over: action inbox, why-flagged
+> explanations, relationship maps, evidence dossiers. What changed is the delivery
+> mechanism: the current dashboard needs **zero** third-party packages, where the
+> Streamlit path needed four.
+>
+> Original direction, for the record:
+
 > Direction set by the LLM council (unanimous): **enhance the existing Streamlit
 > dashboard into a fraud-analyst workbench** — do NOT build a separate React app.
 > One `streamlit run` on a cold clone must show the whole system. Reliability is the

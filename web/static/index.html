@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PayGuard-AgentX — Operator Dashboard</title>
+<link rel="stylesheet" href="/app.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🛡️</text></svg>">
+</head>
+<body>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<div class="shell">
+
+  <!-- ───────────────────────────── sidebar ───────────────────────────── -->
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor"
+             stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2.5 4.5 5.8v5.4c0 4.6 3.2 8.9 7.5 10.3 4.3-1.4 7.5-5.7 7.5-10.3V5.8Z"/>
+          <path d="m9.2 12.1 2 2.1 3.6-4.2"/>
+        </svg>
+      </span>
+      <div class="brand-text">
+        <div class="brand-name">PayGuard<span class="brand-x">-AgentX</span></div>
+        <div class="brand-sub">Procurement integrity</div>
+      </div>
+    </div>
+
+    <nav class="nav" aria-label="Sections">
+      <div class="nav-group">Workspace</div>
+      <button class="nav-item is-active" data-view="inbox">
+        <span class="nav-ico" aria-hidden="true">
+          <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9.5h3l1 2h4l1-2h3"/><path d="M2.5 9.5 4 3h8l1.5 6.5V13H2.5Z"/></svg>
+        </span>
+        Action Inbox
+        <span class="nav-count" id="nav-pending" hidden></span>
+      </button>
+      <button class="nav-item" data-view="operations">
+        <span class="nav-ico" aria-hidden="true">
+          <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 3.5h11M2.5 8h11M2.5 12.5h7"/></svg>
+        </span>
+        Operations
+      </button>
+      <button class="nav-item" data-view="analyst">
+        <span class="nav-ico" aria-hidden="true">
+          <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="4" cy="4" r="1.8"/><circle cx="12" cy="6" r="1.8"/><circle cx="7" cy="12" r="1.8"/><path d="M5.6 4.7 10.3 5.6M11.2 7.6 8.2 10.4M5.6 10.9 5 5.8"/></svg>
+        </span>
+        Analyst Workspace
+      </button>
+
+      <div class="nav-group">Record</div>
+      <button class="nav-item" data-view="cases">
+        <span class="nav-ico" aria-hidden="true">
+          <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4" width="11" height="9" rx="1.2"/><path d="M6 4V2.8h4V4"/></svg>
+        </span>
+        Cases
+      </button>
+      <button class="nav-item" data-view="evidence">
+        <span class="nav-ico" aria-hidden="true">
+          <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2 3.5 4v4c0 3 1.9 5.6 4.5 6.4C10.6 13.6 12.5 11 12.5 8V4Z"/></svg>
+        </span>
+        Evidence
+      </button>
+      <button class="nav-item" data-view="settings">
+        <span class="nav-ico" aria-hidden="true">
+          <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2.1"/><path d="M8 1.8v1.6M8 12.6v1.6M14.2 8h-1.6M3.4 8H1.8M12.4 3.6l-1.1 1.1M4.7 11.3l-1.1 1.1M12.4 12.4l-1.1-1.1M4.7 4.7 3.6 3.6"/></svg>
+        </span>
+        Settings
+      </button>
+    </nav>
+
+    <div class="side-block">
+      <div class="eyebrow">System status</div>
+      <ul class="status-list" id="status-list"></ul>
+      <div class="status-foot">
+        <div><span class="k">LLM</span> <span id="status-llm">—</span></div>
+        <div><span class="k">Mode</span> <span id="status-mode">—</span></div>
+      </div>
+    </div>
+
+    <div class="side-foot">
+      <div class="who">
+        <span class="who-dot" aria-hidden="true"></span>
+        <span id="who-name">—</span>
+        <span class="role-tag" id="who-role">—</span>
+      </div>
+      <p class="guard">
+        <span aria-hidden="true">⚑</span>
+        No payment is ever executed from this product.
+      </p>
+      <button class="theme-toggle" id="theme-toggle" aria-label="Switch colour theme">
+        <span id="theme-label">Auto theme</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ───────────────────────────── main ───────────────────────────── -->
+  <main class="main" id="main">
+
+    <!-- Auralis WebGL ambient field, behind the whole content column -->
+    <div class="bg-layer" aria-hidden="true"><canvas id="bg-canvas"></canvas></div>
+    <div class="bg-veil" aria-hidden="true"></div>
+
+    <header class="hero">
+      <div class="hero-inner">
+        <div class="hero-eyebrow">
+          <span class="pip" aria-hidden="true"></span>
+          Agentic retail operations &amp; procurement integrity
+        </div>
+        <h1 class="hero-title">PayGuard<span class="hero-title-x">-AgentX</span></h1>
+        <p class="hero-lede" id="hero-lede"></p>
+        <ul class="hero-facts">
+          <li><b>Offline</b> no API key, no GPU</li>
+          <li><b>Human-gated</b> agents recommend, people decide</li>
+          <li><b>Signed</b> HMAC-SHA256 evidence</li>
+        </ul>
+      </div>
+    </header>
+
+    <section class="kpis" id="kpis" aria-label="Key metrics"></section>
+
+    <!-- demo mode -->
+    <section class="panel panel-demo" id="demo-panel">
+      <div class="panel-head">
+        <div>
+          <div class="eyebrow">Demo mode</div>
+          <p class="panel-note">Each scenario runs the same agents on a different synthetic
+            input — the supervisor route changes, and the timeline shows it.</p>
+        </div>
+      </div>
+      <div class="demo-grid">
+        <div class="demo-control">
+          <label class="field-label" for="scenario">Scenario</label>
+          <div class="select-wrap">
+            <select id="scenario" class="select"></select>
+          </div>
+          <p class="scenario-blurb" id="scenario-blurb"></p>
+          <div class="btn-row">
+            <button class="btn btn-primary" id="run-demo">
+              <span class="btn-ico" aria-hidden="true">▶</span> Run demo
+            </button>
+            <button class="btn" id="reset-demo"
+              title="Clear stored runs, cases, decisions and evidence so a scenario can be demonstrated again from a clean inbox.">
+              Reset
+            </button>
+          </div>
+        </div>
+        <div class="demo-facts">
+          <div class="eyebrow">This scenario demonstrates</div>
+          <ul class="demo-list" id="scenario-demos"></ul>
+        </div>
+      </div>
+      <div id="run-error" class="alert alert-error" hidden></div>
+    </section>
+
+    <!-- ── views ── -->
+    <section class="view is-active" id="view-inbox">
+      <div class="view-head">
+        <h2 class="view-title">Action Inbox</h2>
+        <p class="view-note">Consequential actions the agents recommend but will not take on their own.</p>
+      </div>
+      <div id="actions"></div>
+
+      <div id="timeline-block" hidden>
+        <div class="view-head">
+          <h2 class="view-title">Agent execution</h2>
+          <p class="view-note" id="route-note"></p>
+        </div>
+        <div class="panel">
+          <div class="timeline" id="timeline"></div>
+          <p class="panel-note">Skipped agents were not required by the supervisor route for
+            this input — they are not failures.</p>
+        </div>
+      </div>
+
+      <div class="view-head">
+        <h2 class="view-title">Open investigations</h2>
+      </div>
+      <div id="alerts"></div>
+    </section>
+
+    <section class="view" id="view-operations">
+      <div class="view-head">
+        <h2 class="view-title">Operations</h2>
+        <p class="view-note">Stock, purchase orders, and supplier invoice checks from the latest run.</p>
+      </div>
+      <div id="operations"></div>
+    </section>
+
+    <section class="view" id="view-analyst">
+      <div class="view-head">
+        <h2 class="view-title">Analyst Workspace</h2>
+        <p class="view-note">Suspicious payment networks and the signals behind each score.</p>
+      </div>
+      <div id="analyst"></div>
+    </section>
+
+    <section class="view" id="view-cases">
+      <div class="view-head">
+        <h2 class="view-title">Cases</h2>
+        <p class="view-note">Every alert opens a case; its status follows the decision you record.</p>
+      </div>
+      <div class="search-wrap">
+        <span class="search-ico" aria-hidden="true">
+          <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="7" cy="7" r="4.2"/><path d="m10.2 10.2 3 3"/></svg>
+        </span>
+        <input class="input" id="case-search" type="search"
+               placeholder="Search cases by title, summary, or related id…">
+      </div>
+      <div id="cases"></div>
+    </section>
+
+    <section class="view" id="view-evidence">
+      <div class="view-head">
+        <h2 class="view-title">Evidence</h2>
+        <p class="view-note">Every consequential action is sealed in an HMAC-SHA256 signed dossier.</p>
+      </div>
+      <div id="evidence"></div>
+    </section>
+
+    <section class="view" id="view-settings">
+      <div class="view-head">
+        <h2 class="view-title">Settings</h2>
+        <p class="view-note">Workspace, access, and runtime configuration.</p>
+      </div>
+      <div id="settings"></div>
+    </section>
+
+    <footer class="foot">
+      <span>PayGuard-AgentX</span>
+      <span class="foot-sep" aria-hidden="true">·</span>
+      <span>Synthetic data only</span>
+      <span class="foot-sep" aria-hidden="true">·</span>
+      <span>Not production-audited</span>
+    </footer>
+
+  </main>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="/auralis.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>

@@ -1,24 +1,37 @@
-"""Session and persistence orchestration for Streamlit pages."""
+"""Run and persistence orchestration, independent of any UI framework.
 
-import streamlit as st
+Holds the last run in memory so a browser refresh does not lose it; everything
+durable (runs, alerts, cases, decisions, evidence) goes through the storage
+boundary.
+"""
 
-from dashboard.services.auth import current_user
 from dashboard.services.storage import get_storage
 from dashboard.services.workflows import plain_alerts, run_scenario
-from src.models.product import Case, EvidenceRecord, RunSummary
 from src.core import audit
+from src.models.product import Case, EvidenceRecord, RunSummary
 
 
-def boot(page_title="PayGuard Operations"):
-    user = current_user()
-    return user, get_storage()
+_LAST_RUN = {"state": None}
 
 
-def run_and_save(preset):
+def current_state():
+    return _LAST_RUN["state"]
+
+
+def set_state(state):
+    _LAST_RUN["state"] = state
+    return state
+
+
+def clear_state():
+    _LAST_RUN["state"] = None
+
+
+def run_and_save(preset, storage=None):
+    """Execute a scenario and persist everything consequential it produced."""
+    storage = storage or get_storage()
     state = run_scenario(preset)
-    storage = get_storage()
-    alerts = plain_alerts(state)
-    for alert in alerts:
+    for alert in plain_alerts(state):
         alert["status"] = "OPEN"
         alert["run_id"] = state["run_id"]
         storage.save_alert(alert)
@@ -30,17 +43,12 @@ def run_and_save(preset):
             evidence_id=dossier["dossier_id"], subject_id=dossier.get("subject_id", ""),
             evidence_type="Pipeline evidence", summary=dossier.get("summary", ""),
             verified=True, dossier=dossier).model_dump())
-    summary = RunSummary(run_id=state["run_id"], route=state.get("route", "noop"),
-                         preset=preset, rejected_count=len(state.get("rejected", [])),
-                         alert_count=len(alerts), ring_count=len(state.get("mule_rings", []))).model_dump()
-    storage.save_run(state["run_id"], summary)
-    st.session_state["state"] = state
-    st.session_state["last_run"] = summary
-    return state
-
-
-def current_state():
-    return st.session_state.get("state")
+    storage.save_run(state["run_id"], RunSummary(
+        run_id=state["run_id"], route=state.get("route", "noop"), preset=preset,
+        rejected_count=len(state.get("rejected", [])),
+        alert_count=len(plain_alerts(state)),
+        ring_count=len(state.get("mule_rings", []))).model_dump())
+    return set_state(state)
 
 
 def latest_records(storage):
@@ -50,7 +58,7 @@ def latest_records(storage):
 
 
 def record_operator_decision(storage, user, subject_kind, subject_id, action, state=None):
-    """Persist a role-authorized decision and its signed evidence."""
+    """Persist a decision and its signed evidence, and reflect it in the run."""
     decision_id = f"DECISION_{subject_kind}_{subject_id}"
     payload = {"decision_id": decision_id, "subject_kind": subject_kind,
                "subject_id": subject_id, "action": action, "actor_id": user.user_id,
@@ -79,3 +87,8 @@ def record_operator_decision(storage, user, subject_kind, subject_id, action, st
                 "DISMISSED" if action == "DISMISSED" else "RESOLVED")
             storage.save_case(case)
     return payload
+
+
+def reset(storage):
+    storage.reset()
+    clear_state()

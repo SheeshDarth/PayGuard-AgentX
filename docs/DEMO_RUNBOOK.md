@@ -23,18 +23,36 @@ python scripts\smoke_live.py
 pytest -q
 python main.py
 python evaluation\run_eval.py
-python -m streamlit run dashboard\app.py
+python -m web.server
 ```
+
+Then open **http://127.0.0.1:8000**. The dashboard is plain HTML/CSS/JS served by
+the Python standard library: nothing to install, nothing to build, no network.
 
 ## Walkthrough
 
-1. Open **Action Inbox**; keep **Procurement mismatch** selected and click **Run analysis**.
-2. Show the four completion steps, then open **Operations** to explain low stock, the suggested order, and the invoice mismatch.
-3. Return to **Action Inbox** and show the PO/dispute cards. Approve or reject one item; confirm the state persists after navigation or rerun.
-4. Select **Fraud-ring investigation**, run it, then open **Analyst Workspace** to show the plain-language alert before the technical network details.
-5. Open **Cases** to show the investigation record and **Evidence** to show signed dossiers and verification status.
-6. Under **Demo tools**, enable tampering and show verification changing from valid to invalid.
-7. Open **Settings** to explain demo mode, SQLite fallback, and the no-external-execution guarantee.
+1. Open the dashboard. The header states what PayGuard-AgentX does; the sidebar
+   **System status** shows every subsystem and that the LLM is the offline stub.
+2. Scenario **2 · Suspicious Invoice** → **Run demo**.
+3. **Action Inbox**: a HIGH invoice dispute (supplier, amount, confidence) and a
+   MEDIUM restock purchase order. Expand **Why this was flagged** — the 487% PO
+   deviation, the duplicate billing, and the cited clause `REG_PO_MATCH`.
+4. **Agent execution**: all ten agents ran on route `full`.
+5. **Operations**: low stock, the drafted order and its rationale, the invoice
+   checks, and the records quarantined at the gate.
+6. Back in **Action Inbox**, **Approve** one item. The decision is signed and the
+   item leaves the queue.
+7. Scenario **3 · Fraud Ring** → **Run demo**. The timeline now shows six agents
+   **skipped** — the supervisor took route `ring_only`. This is the clearest
+   demonstration of dynamic routing.
+8. **Analyst Workspace**: the closed loop `SUP_A → SUP_B → SUP_C → back to SUP_A`,
+   risk 70/100, the per-account signals, and the payroll false-positive control.
+9. **Cases**: the investigation records. **Evidence**: signed dossiers; use
+   **Demo: tamper with payload** to show verification flip to INVALID.
+10. **Settings**: switch the demo role to `VIEWER` and show the decision buttons
+    disable — the server rejects the call too, not just the browser.
+
+Select **Reset** to return any scenario to a clean queue.
 
 Approval records a human disposition only. The demo never sends a PO, transfers money, or calls an external supplier.
 
@@ -52,7 +70,9 @@ Approval records a human disposition only. The demo never sends a PO, transfers 
 ## Submission checklist
 
 - Run the complete command sequence on the demo laptop.
-- Capture screenshots of Action Inbox, Operations, Analyst Workspace, Cases, and Evidence.
+- Capture screenshots of Action Inbox, Operations, Analyst Workspace, Cases, and
+  Evidence (save the Action Inbox one as `docs/screenshot.png` and uncomment the
+  image line at the top of the README).
 - Record Python and package versions.
 - Use a private `PAYGUARD_AUDIT_KEY`.
 - Keep synthetic-data and no-payment limitations in the presentation.
