@@ -99,7 +99,8 @@ class PostgresStorage:
         data = json.dumps(payload, default=str, sort_keys=True)
         with self.conn.cursor() as cur:
             cur.execute(f"INSERT INTO {table} VALUES (%s,%s,%s) "
-                        "ON CONFLICT DO NOTHING", (key, data, _now()))
+                        "ON CONFLICT DO UPDATE SET payload=EXCLUDED.payload, created_at=EXCLUDED.created_at",
+                        (key, data, _now()))
         self.conn.commit()
 
     def _list(self, table):

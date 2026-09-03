@@ -122,7 +122,7 @@ src/
   utils/retail_simulator.py # synthetic sales / inventory / invoice generator
 evaluation/run_eval.py      # labeled eval + agentic metrics
 main.py                     # end-to-end demo entry point
-tests/                      # 72 pytest cases
+tests/                      # pytest suite
 docs/                       # PRD, TRD, ARCHITECTURE, ROADMAP, RUBRIC, SDG
 ```
 

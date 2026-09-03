@@ -16,7 +16,7 @@ catching duplicate or inflated billing, and drafting disputes. Every consequenti
 action is sealed in a tamper-evident, HMAC-signed audit dossier, and no autonomous
 decision ever spends money.
 
-The system is built, tested (**72 passing tests**), and runs end-to-end offline with
+The system is built, tested (**79 passing tests**), and runs end-to-end offline with
 no GPU, no network, and no API key. Every heavy component — the self-hosted language
 model, the graph database, the vector store — is local-first with a tested pure-Python
 fallback, so the pipeline is fully demonstrable on any machine and lights up for real
@@ -129,7 +129,7 @@ than the two-model setup would have been.
 | Memory & knowledge | SQLite checkpoint · Chroma `case_history` + `regulatory_docs` · Kùzu graph | `src/core/{checkpoint,memory,graph_store,relational}.py` |
 | Orchestration | Dynamic-routing supervisor | `src/agents/orchestrator.py` |
 | Multi-agent *(expected)* | 7 agents + 2 critics | `src/agents/` |
-| Feedback loops *(expected)* | Reflection critics · Demand↔Stock negotiation · confidence-based HITL | `critics.py`, `negotiation.py`, `hitl.py` |
+| Feedback loops | Reflection critics · Demand↔Stock negotiation · human-only HITL | `critics.py`, `negotiation.py`, `hitl.py` |
 
 Full mapping: `docs/RUBRIC_TRACEABILITY.md`.
 
@@ -184,7 +184,8 @@ made about real-world performance.
 - **No compliance certification** is claimed — the fraud/compliance framing is a design
   target, kept deliberately honest.
 - The real Ollama / vLLM / Kùzu / Chroma backends each have a tested pure-Python
-  fallback, and it is those fallbacks the 72-test suite exercises. The **live** backends
+  fallback, and it is those fallbacks the 79-test suite exercises. Optional live smoke
+  checks skip cleanly when services are unavailable; offline mode is the guaranteed demo path.
   have **not** yet been run on the demo laptop — that on-laptop validation is the one
   remaining hands-on step.
 - The language-model hooks are wired and offline-tested; live-model uplift over the

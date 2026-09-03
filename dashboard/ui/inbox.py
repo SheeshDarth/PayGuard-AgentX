@@ -63,13 +63,15 @@ def render(user, storage):
                 st.caption("Approval records your decision only; it does not execute a payment or send a purchase order.")
                 approve, reject = st.columns(2)
                 capability = "review_fraud" if item["kind"] == "RING" else "approve_po"
-                if approve.button("Approve", key="inbox-approve-" + key,
+                approve_label = "Escalate" if item["kind"] == "RING" else "Approve"
+                reject_label = "Dismiss" if item["kind"] == "RING" else "Reject"
+                if approve.button(approve_label, key="inbox-approve-" + key,
                                   disabled=already or not can(user, capability)):
                     action = "ESCALATED" if item["kind"] == "RING" else "APPROVED"
                     record_operator_decision(storage, user, item["kind"], item["id"], action, state)
                     st.success("Decision saved and signed.")
                     st.rerun()
-                if reject.button("Reject", key="inbox-reject-" + key,
+                if reject.button(reject_label, key="inbox-reject-" + key,
                                  disabled=already or not can(user, capability)):
                     action = "DISMISSED" if item["kind"] == "RING" else "REJECTED"
                     record_operator_decision(storage, user, item["kind"], item["id"], action, state)

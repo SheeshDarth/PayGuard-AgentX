@@ -65,7 +65,7 @@
 
 - [x] Week 1 -- Ollama-first LLM layer; SQLite/Kuzu/Chroma stores; extended schemas; ARCHITECTURE.md
 - [x] Week 2 -- dynamic-routing supervisor (orchestrator.py); Regulatory-Auditor + seeded clauses; ToolKit tool registry + MCP server wrapper; SqliteSaver checkpointer factory
-- [x] Week 3 -- PO-Critic / Dispute-Critic reflection loops; Demand/Stock negotiation protocol; confidence-based HITL routing; SQLite trace logging; agentic eval metrics (plan-revision rate, escalation calibration)
+- [x] Week 3 -- PO-Critic / Dispute-Critic reflection loops; Demand/Stock negotiation protocol; human-only HITL routing; SQLite trace logging; agentic eval metrics
 - [x] Week 4 -- Streamlit dashboard (`dashboard/app.py`: pipeline trace, HITL queue, one-click HMAC verify + tamper demo); `docs/RUBRIC_TRACEABILITY.md`; `docs/SDG_ALIGNMENT.md`
 
-> Kuzu (Cypher), Chroma, and Ollama code paths are written with offline fallbacks and need validation on the RTX 4050 laptop; the fallbacks are what the 72-test suite exercises. Remaining hands-on step: run `streamlit run dashboard/app.py` on the laptop and capture the demo.
+> Kuzu (Cypher), Chroma, and Ollama code paths are written with offline fallbacks; optional backend smoke tests skip cleanly when services are unavailable. The 79-test suite and Streamlit health check cover the guaranteed offline path. Remaining hands-on step: capture the product-shell demo.
