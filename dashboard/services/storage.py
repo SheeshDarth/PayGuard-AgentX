@@ -1,4 +1,4 @@
-"""Storage boundary for the Streamlit product shell.
+"""Storage boundary for the operator dashboard.
 
 SQLite is the default local/offline implementation. PostgreSQL is selected by
 PAYGUARD_DATABASE_URL when psycopg is installed; both implementations expose
@@ -23,6 +23,8 @@ CREATE TABLE IF NOT EXISTS cases (case_id TEXT PRIMARY KEY, payload TEXT NOT NUL
 CREATE TABLE IF NOT EXISTS alerts (alert_id TEXT PRIMARY KEY, payload TEXT NOT NULL, created_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS evidence (evidence_id TEXT PRIMARY KEY, payload TEXT NOT NULL, created_at TEXT NOT NULL);
 """
+
+TABLES = ("runs", "decisions", "cases", "alerts", "evidence")
 
 
 def _now():
@@ -68,6 +70,14 @@ class SQLiteStorage:
     def list_cases(self): return self._list("cases")
     def list_alerts(self): return self._list("alerts")
     def list_evidence(self): return self._list("evidence")
+
+    def reset(self):
+        """Clear the demo workspace. Operator decisions are keyed by subject, so a
+        re-run of the same scenario reuses subject ids and would otherwise look
+        already-decided; resetting gives a repeatable demo from a clean queue."""
+        for table in TABLES:
+            self.conn.execute(f"DELETE FROM {table}")
+        self.conn.commit()
 
 
 def get_storage():
@@ -129,3 +139,9 @@ class PostgresStorage:
         with self.conn.cursor() as cur:
             cur.execute("SELECT payload FROM decisions ORDER BY created_at DESC")
             return [json.loads(row[0]) for row in cur.fetchall()]
+
+    def reset(self):
+        with self.conn.cursor() as cur:
+            for table in TABLES:
+                cur.execute(f"DELETE FROM {table}")
+        self.conn.commit()

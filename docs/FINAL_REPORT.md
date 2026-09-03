@@ -110,7 +110,7 @@ store must be embedded and in-process.
 | Vector / docs | Chroma (embedded) | regulatory RAG + long-term case memory |
 | Embeddings | MiniLM, CPU-only | keeps all VRAM for the reasoning model |
 | Tools | MCP + custom | validation / relational / graph / doc sources as real MCP tools |
-| Dashboard | Streamlit | interactive operator demo |
+| Dashboard | HTML/CSS/JS on stdlib `http.server` | interactive operator demo, zero dependencies |
 
 **Single-model tradeoff (deliberate):** rather than a stronger supervisor model and a
 cheaper worker model (which would thrash a single 6 GB card), one model is loaded and
@@ -123,7 +123,7 @@ than the two-model setup would have been.
 
 | Rubric capability | How it is satisfied | Primary artifact |
 |---|---|---|
-| User–agent interaction | Streamlit dashboard: build a batch, run the supervisor, work the HITL queue, one-click HMAC verify + tamper demo | `dashboard/app.py` |
+| User–agent interaction | Web dashboard: run a demo scenario, read the agent timeline, expand why-flagged explanations, work the HITL queue, one-click HMAC verify + tamper demo | `web/server.py`, `web/static/` |
 | Language-model integration | Self-hosted Ollama/vLLM at each `LLM-HOOK`; deterministic offline stub otherwise | `src/core/llm.py` |
 | Tools (MCP + custom) | 8 schema'd tools (DQ, SQL, graph, doc, case, sign, verify, mule-ring scan) as a ToolKit and over an MCP server | `src/agents/tools.py`, `mcp_server/server.py` |
 | Memory & knowledge | SQLite checkpoint · Chroma `case_history` + `regulatory_docs` · Kùzu graph | `src/core/{checkpoint,memory,graph_store,relational}.py` |

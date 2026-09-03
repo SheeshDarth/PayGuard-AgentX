@@ -1,15 +1,13 @@
-# ── Core runtime (imported by the current Phase-1 scaffolding) ──────────────
+# ── Core runtime ────────────────────────────────────────────────────────────
 pydantic>=2.7.0
 
 # ── Dev / test ──────────────────────────────────────────────────────────────
 pytest>=8.0.0
 rich>=13.7.0
 
-# ── Dashboard (operator workbench: streamlit run dashboard/app.py) ───────────
-# Only needed to run the UI; the core pipeline, tests, and eval run without these.
-streamlit>=1.35.0
-pandas>=2.2.0
-networkx>=3.2          # fraud-network graph (offline)
-matplotlib>=3.8.0      # static graph render; UI degrades to an edge table if absent
-
+# ── Dashboard ───────────────────────────────────────────────────────────────
+# None. The operator dashboard is hand-written HTML/CSS/JS served by
+# http.server from the Python standard library:  python -m web.server
+# No web framework, no build step, no CDN, no JavaScript package manager.
+#
 # Optional local-backend dependencies are listed in requirements-live.txt.

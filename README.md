@@ -6,8 +6,15 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Orchestration: LangGraph](https://img.shields.io/badge/Orchestration-LangGraph-orange.svg)](https://github.com/langchain-ai/langgraph)
 [![LLM: self-hosted (Ollama/vLLM)](https://img.shields.io/badge/LLM-self--hosted%20Ollama%2FvLLM-green.svg)](src/core/llm.py)
-[![Tests: passing](https://img.shields.io/badge/tests-passing-brightgreen.svg)](tests/)
+[![Tests: 103 passing](https://img.shields.io/badge/tests-103%20passing-brightgreen.svg)](tests/)
+[![UI: zero dependencies](https://img.shields.io/badge/UI-HTML%2FCSS%2FJS%20%C2%B7%20no%20framework-blueviolet.svg)](web/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+<!-- Screenshot: run `python -m web.server`, open http://127.0.0.1:8000, run the
+     "2 · Suspicious Invoice" scenario, save the page as docs/screenshot.png,
+     then uncomment the line below.
+![PayGuard-AgentX dashboard](docs/screenshot.png)
+-->
 
 ---
 
@@ -20,7 +27,43 @@
 
 They meet at one natural loop: the **purchase order → supplier invoice → payment** cycle. ShelfSense decides *what to buy*; PayGuard *guards the data going in and audits the money coming back*. The deterministic PayGuardDQ engine is a **tool the agents call** — not a passive validator — which is what makes the loop genuinely *agentic*.
 
-> **Honest status:** the guarded multi-agent loop runs end-to-end offline with **no GPU, no network, and no API key**. The Streamlit product shell separates Action Inbox, Operations, Analyst Workspace, Cases, Evidence, and Settings. PostgreSQL/OIDC/live backends are installable paths; SQLite and deterministic fallbacks remain the guaranteed demo path. Nothing here is production-audited and all data is synthetic.
+> **Honest status:** the guarded multi-agent loop runs end-to-end offline with **no GPU, no network, and no API key**. The operator dashboard is hand-written HTML/CSS/JS served by Python's standard-library `http.server` — no web framework, no build step, no CDN, no `npm install` — and separates Action Inbox, Operations, Analyst Workspace, Cases, Evidence, and Settings. PostgreSQL/OIDC/live backends are installable paths; SQLite and deterministic fallbacks remain the guaranteed demo path. Nothing here is production-audited and all data is synthetic.
+
+---
+
+## Architecture
+
+```
+                        User (browser)
+                              │
+                    HTML / CSS / JS dashboard          web/static/
+                              │  fetch() JSON
+                    http.server JSON API               web/server.py
+                              │
+                  Supervisor / LangGraph               src/agents/orchestrator.py
+                              │  dynamic route
+        ┌─────────────┬───────┴───────┬─────────────┬──────────────┐
+   DQ-Sentinel   Demand +Stock    Ops-Planner   Payment-Auditor  Ring-Auditor
+        │        (+negotiation)        │        (+Regulatory)         │
+        └─────────────┴───────┬───────┴─────────────┴──────────────┘
+                              │  tools
+        ┌──────────┬──────────┼──────────┬────────────────┐
+    DQ Engine   Relational  Knowledge   RAG / Memory   Fraud Detection
+   (0 tokens)    SQLite    Graph (Kùzu)   (Chroma)      (src/core/mule/)
+        └──────────┴──────────┼──────────┴────────────────┘
+                              │
+                 PO/Dispute Critics → HITL queue
+                              │
+              Evidence dossier (HMAC-SHA256, signed)
+                              │
+                      ▶ Human decision
+              (approve / reject / escalate / dismiss)
+```
+
+Every box below the supervisor has a tested offline fallback, so the whole path
+runs with no model, no GPU, and no network. **No branch executes a payment** —
+the pipeline terminates in a human decision, and approving records a signed
+decision only.
 
 ---
 
@@ -28,7 +71,7 @@ They meet at one natural loop: the **purchase order → supplier invoice → pay
 
 | Capability | Implementation | Artifact |
 |---|---|---|
-| **User–agent interaction** | Streamlit product shell: run a preset, prioritize the Action Inbox, review cases, and inspect signed evidence | [`dashboard/app.py`](dashboard/app.py) |
+| **User–agent interaction** | Zero-dependency web dashboard: run a demo scenario, work the Action Inbox, read *why* each item was flagged, review cases, and verify signed evidence | [`web/`](web/server.py) |
 | **Language model** | Self-hosted only — **Ollama** (`phi4-mini`) or **vLLM**, called at each `LLM-HOOK`; deterministic offline stub otherwise | [`src/core/llm.py`](src/core/llm.py) |
 | **Tools (MCP + custom)** | 8 schema'd tools (DQ / relational / graph / doc / case / sign / verify / mule-ring scan) as a ToolKit and over an MCP server | [`tools.py`](src/agents/tools.py), [`mcp_server/`](mcp_server/server.py) |
 | **Memory & knowledge** | SQLite checkpoint · Chroma `case_history` + `regulatory_docs` RAG · Kùzu (Cypher) graph | [`core/`](src/core/) |
@@ -57,39 +100,215 @@ Every consequential action (PO draft, dispute, negotiation transcript) is sealed
 
 ---
 
-## Quick start
+## Getting started
+
+### Prerequisites
+
+| Need | Version | Notes |
+|---|---|---|
+| Python | 3.11 or newer | `python --version` |
+| A browser | any modern one | Chrome, Edge, Firefox, Safari |
+| Network | **not required** | nothing is downloaded at runtime |
+
+There is no Node.js, npm, bundler, or JavaScript toolchain requirement. The
+dashboard is four static files served by Python's standard library.
+
+### Install
 
 ```bash
 git clone https://github.com/SheeshDarth/PayGuard-AgentX.git
 cd PayGuard-AgentX
-
 python -m venv venv
-source venv/bin/activate           # Windows: venv\Scripts\activate
-pip install -r requirements.txt    # core scaffolding needs only pydantic
-
-python main.py                     # end-to-end demo (offline, no key needed)
-pytest -q                          # full test suite
-python evaluation/run_eval.py      # evaluation baseline + agentic metrics
-streamlit run dashboard/app.py     # operator dashboard -> http://localhost:8501
 ```
 
-The dashboard persists operator dispositions in `.payguard/workspace.sqlite` and
-signs them with HMAC-SHA256. Approval records a decision only; it never executes
-a payment or sends a purchase order. Optional local-backend checks are available
-with `pip install -r requirements-live.txt` followed by
-`python scripts/smoke_live.py`.
+Activate the environment:
+
+```bash
+source venv/bin/activate
+```
+
+On Windows PowerShell instead:
+
+```powershell
+venv\Scripts\Activate.ps1
+```
+
+Then install — the entire dependency list is `pydantic`, `pytest`, `rich`:
+
+```bash
+pip install -r requirements.txt
+```
+
+### Run the dashboard
+
+```bash
+python -m web.server
+```
+
+Open **http://127.0.0.1:8000**. Pick a scenario, select **Run demo**.
+
+To use a different port:
+
+```bash
+python -m web.server 8080
+```
+
+### Other entry points
+
+Terminal demo — the whole supervised pipeline, no browser:
+
+```bash
+python main.py
+```
+
+Full test suite (103 tests, ~5 seconds):
+
+```bash
+pytest -q
+```
+
+Evaluation harness — labelled accuracy plus agentic metrics:
+
+```bash
+python evaluation/run_eval.py
+```
+
+### Verify the install
+
+A healthy setup prints `103 passed` from `pytest -q`, and `python main.py` ends
+with `Done. Deterministic run -- no LLM, GPU or network required.` In the
+dashboard, the sidebar **System status** should show seven ticks with
+`LLM: offline stub` and `Mode: Demo`.
+
+### Troubleshooting
+
+| Symptom | Cause and fix |
+|---|---|
+| `No module named web` | Run from the repository root, not from inside `web/`. |
+| `Address already in use` | Another process holds 8000. Use `python -m web.server 8080`. |
+| Dashboard loads but says it cannot reach the server | The server exited. Check the terminal running `python -m web.server`. |
+| Hero background is flat dark, no motion | WebGL is unavailable or reduced-motion is on. Cosmetic only — every feature still works. |
+| An action shows no Approve/Reject | Your role cannot decide that item. Change the demo role in **Settings**. |
+| Scenario re-runs open with an already-decided queue | Select **Reset** to clear the workspace. |
+| `PAYGUARD_AUDIT_KEY is a public/demo value` warning | Expected in demo mode. Set a private key for trusted evidence. |
+
+### Configuration (all optional)
+
+| Variable | Default | Effect |
+|---|---|---|
+| `PAYGUARD_AUDIT_KEY` | demo value | HMAC signing key for evidence dossiers |
+| `PAYGUARD_SQLITE_PATH` | `.payguard/workspace.sqlite` | where decisions persist |
+| `PAYGUARD_DEMO_MODE` | on | enables the demo role selector |
+| `PAYGUARD_DEFAULT_ROLE` | `OPERATIONS` | role when demo mode is off |
+| `PAYGUARD_LLM_BACKEND` | unset (offline stub) | `ollama` or `vllm` — self-hosted only |
+
+State lives in `.payguard/workspace.sqlite`. Delete that directory, or use the
+in-app **Reset**, to start clean. Approval records a signed decision only — it
+never executes a payment or sends a purchase order. Optional local-backend checks:
+`pip install -r requirements-live.txt` then `python scripts/smoke_live.py`.
 
 **Optional live LLM (self-hosted only):** set `PAYGUARD_LLM_BACKEND=ollama` + `PAYGUARD_LLM_MODEL=phi4-mini` (after `ollama pull phi4-mini`), or `PAYGUARD_LLM_BACKEND=vllm` with a running vLLM server. No cloud provider is ever called. See [.env.example](.env.example).
+
+---
+
+## The interface
+
+Six screens, one page, no client-side framework.
+
+| Screen | What it is for |
+|---|---|
+| **Action Inbox** | Everything waiting on a person, highest severity first, each with a *Why this was flagged* panel and the agent execution timeline. |
+| **Operations** | The retail side of a run: low stock, the drafted purchase order and its rationale, invoice checks, and records quarantined at the DQ gate. |
+| **Analyst Workspace** | Network-level fraud: the relationship map, per-account signals, ring transactions, and the payroll false-positive control. |
+| **Cases** | One case per alert, searchable, status following the decision you record. |
+| **Evidence** | Signed dossiers, with server-side verification and a tamper demonstration. |
+| **Settings** | Demo role, the role/capability matrix, and live runtime status. |
+
+**Design notes.** A serif display face carries the wordmark and section titles
+against a neutral sans for operational text — the pairing financial-audit tooling
+has always used. The violet signature colour sits deliberately outside the
+severity scale, so red, amber, green and blue are reserved for data and the
+chrome can never imply an alert state. Both fonts resolve to faces already on the
+machine; requesting a webfont would break the offline guarantee.
+
+The background is **Auralis**, a WebGL ambient shader ([`web/static/auralis.js`](web/static/auralis.js))
+— layered simplex noise, glow, and film grain. One fixed canvas covers the whole
+content column (the sidebar stays opaque), with panels and cards rendered as
+translucent glass so the field reads through the gutters without costing
+legibility. A theme-aware veil sits between the two: a light wash in the light
+theme, a dark one in dark, so the same violet field works in both. It honours
+`prefers-reduced-motion`, pauses when the tab is hidden, and falls back to the
+flat theme background if WebGL is unavailable.
+
+Contrast was bounded against the shader's own extremes — its maximum output
+`rgb(164,121,255)` derived from the GLSL, composited under each veil — so text
+sitting directly on the field stays **WCAG AA in both themes on every frame**
+(worst case 4.54:1).
+
+---
+
+## Demo scenarios
+
+Open the dashboard, pick a scenario, and select **Run demo**. Each one runs the
+*same* agents over a different synthetic input, so the supervisor's dynamic
+routing is visible in the agent timeline — agents the route did not need are
+shown as **skipped**, never as executed.
+
+| Scenario | What it shows | Route taken |
+|---|---|---|
+| **1 · Normal Restock** | Low inventory → demand projection → restock recommendation → purchase-order draft held for approval | `restock_only` |
+| **2 · Suspicious Invoice** | Invoice validation → PO mismatch **and** duplicate billing → regulatory clause citation → dispute recommendation → human approval | `full` |
+| **3 · Fraud Ring** | Supplier relationships → circular billing + shell-supplier chain → 0–100 fraud score with evidence → human review (and a payroll run that is correctly *not* flagged) | `ring_only` |
+| **4 · Data-Quality Quarantine** | Malformed and checksum-failed records stopped at the gate before any agent reasons over them | `full` |
+
+Every card carries a **Why this was flagged** panel built from the engine's own
+output — deviation percentages, the cited compliance clause, which fraud signals
+fired on which account. Nothing in that panel is generated for display.
+
+---
+
+## Demo in 60 seconds
+
+The shortest reliable sequence for a walkthrough:
+
+```bash
+python -m web.server
+```
+
+1. Open **http://127.0.0.1:8000** — the header states what the system does.
+2. Scenario **2 · Suspicious Invoice** → **Run demo**.
+3. **Action Inbox** — a HIGH invoice dispute (supplier, amount, confidence) and a
+   MEDIUM purchase order.
+4. Expand **Why this was flagged** — the 487% PO deviation, the duplicate, and
+   the cited clause `REG_PO_MATCH`.
+5. Scroll to **Agent execution** — all ten agents ran; route `full`.
+6. Select **Approve**. The decision is signed; the item leaves the queue.
+7. Scenario **3 · Fraud Ring** → **Run demo** → **Analyst Workspace** — the
+   closed billing loop `SUP_A → SUP_B → SUP_C → back to SUP_A`, risk 70/100, and
+   the payroll false-positive control. Note the timeline now shows six agents
+   **skipped** — the route changed.
+8. **Evidence** → **Demo: tamper with payload** — the HMAC signature fails.
+9. **Settings** → switch the demo role to `VIEWER`; the decision buttons disable
+   (the server rejects the call too, not just the browser).
+
+Select **Reset** to run any scenario again from a clean queue.
 
 ---
 
 ## Project layout
 
 ```
-dashboard/app.py            # Streamlit operator dashboard (user-agent interaction)
-dashboard/pages/             # Operations, Analyst, Cases, Evidence, Settings pages
-dashboard/services/          # configuration, auth, workflows, storage, decisions
-dashboard/ui/                # semantic theme and reusable product components
+web/server.py               # stdlib http.server: static files + JSON API
+web/static/index.html       #   dashboard shell (6 views, one page)
+web/static/app.css          #   design tokens + components, light + dark
+web/static/app.js           #   rendering + decisions (vanilla, no framework)
+web/static/auralis.js       #   Auralis WebGL ambient hero shader
+dashboard/services/         # UI-independent service layer
+  workflows.py              #   scenarios, agent timeline, why-flagged, status
+  session.py                #   run + persist + record decisions
+  storage.py                #   SQLite (default) / PostgreSQL repository
+  auth.py                   #   roles and server-enforced capabilities
+  config.py                 #   environment boundary
 mcp_server/server.py        # MCP tool server exposing the ToolKit
 src/
   models/schemas.py         # Pydantic v2 models (retail + procurement + legacy)
@@ -122,7 +341,7 @@ src/
   utils/retail_simulator.py # synthetic sales / inventory / invoice generator
 evaluation/run_eval.py      # labeled eval + agentic metrics
 main.py                     # end-to-end demo entry point
-tests/                      # pytest suite
+tests/                      # 103 pytest cases
 docs/                       # PRD, TRD, ARCHITECTURE, ROADMAP, RUBRIC, SDG
 ```
 
@@ -141,7 +360,7 @@ Local-first for a 6 GB-VRAM laptop on mobile data; every component degrades to a
 | Vector / docs | Chroma (embedded) | `regulatory_docs` RAG + `case_history` long-term memory |
 | Embeddings | MiniLM, CPU-only | keeps all VRAM for the reasoning LLM |
 | Tools | MCP (custom tools) | validation / relational / graph / doc sources as real MCP tools |
-| Dashboard | Streamlit | fast interactive demo (trace, HITL queue, HMAC verify) |
+| Dashboard | Hand-written HTML/CSS/JS on `http.server` | zero dependencies, zero build step; a grader with no network can clone and run it |
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the single-model VRAM tradeoff and degrade-gracefully table.
 

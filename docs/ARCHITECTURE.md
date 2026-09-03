@@ -29,7 +29,7 @@ The primary dev/demo machine is a laptop with an **RTX 4050 (6 GB VRAM)** on **m
 | Vector / docs | **Chroma** (embedded) | Two collections: `regulatory_docs` (RAG) and `case_history` (long-term fraud memory). No server. |
 | Embeddings | **MiniLM**, CPU-only | Keeps 100% of the 6 GB VRAM for the reasoning LLM; small enough that CPU embedding beats GPU contention. |
 | Tools | **MCP** (custom tools) | Each tool is a real MCP tool with a schema — satisfies "tools (MCP + custom)" literally and lets any MCP client call them. |
-| Dashboard | **Streamlit** | Fastest path to a polished interactive demo (pipeline trace, HITL queue, one-click HMAC verify) for a 3-person, 4-week clock. |
+| Dashboard | **Hand-written HTML/CSS/JS on stdlib `http.server`** | Zero dependencies and zero build step: a grader with no network can clone and run it. Full control over the operator experience (action cards, why-flagged panels, agent timeline) with no framework in the way. |
 
 ---
 

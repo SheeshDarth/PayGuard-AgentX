@@ -63,7 +63,7 @@ A single small team cannot watch all three continuously. PayGuard-AgentX puts a 
 - **FEAT-7.2** Suggest (never auto-apply) a parser patch when a supplier changes invoice format (Self-Healing-Repair).
 
 ### EPIC 8 — War-Room dashboard ✅ Implemented
-- **FEAT-8.1** Streamlit dashboard: live record stream, agent log, pending PO/dispute approvals, and one-click approve/reject.
+- **FEAT-8.1** Web dashboard: demo scenarios, agent execution timeline, why-flagged explanations, pending PO/dispute/ring approvals, and one-click approve/reject.
 
 ---
 
