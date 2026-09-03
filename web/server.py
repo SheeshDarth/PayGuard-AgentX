@@ -70,11 +70,24 @@ def _open_alerts(state, records):
 
 def _subject(state, kind, subject_id):
     if kind == "PO":
-        return state.get("po_draft") or {}
+        po = state.get("po_draft") or {}
+        return po if po.get("po_id") == subject_id else {}
     if kind == "DISPUTE":
         return next((d for d in state.get("dispute_drafts", [])
                      if d["dispute_id"] == subject_id), {})
     return next((r for r in state.get("mule_rings", []) if r["ring_id"] == subject_id), {})
+
+
+def _valid_decision_subject(state, kind, subject_id, action):
+    """Validate both the subject and the only disposition verbs it supports."""
+    allowed = {
+        "PO": {"APPROVED", "REJECTED"},
+        "DISPUTE": {"APPROVED", "REJECTED"},
+        "RING": {"ESCALATED", "DISMISSED"},
+    }
+    if kind not in allowed or action not in allowed[kind]:
+        return False
+    return bool(_subject(state, kind, subject_id))
 
 
 def _fraud_block(state):
@@ -275,6 +288,8 @@ class Handler(BaseHTTPRequestHandler):
             action = body.get("action")
             if action not in {"APPROVED", "REJECTED", "ESCALATED", "DISMISSED"}:
                 return self._send(400, {"error": "Unknown action."})
+            if not _valid_decision_subject(state, kind, subject_id, action):
+                return self._send(400, {"error": "Decision action or subject is invalid for this run."})
             user = current_user(body.get("role"))
             capability = "review_fraud" if kind == "RING" else "approve_po"
             # Authorization is decided here, never in the browser.

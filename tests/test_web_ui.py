@@ -190,6 +190,22 @@ def test_server_rejects_an_unknown_action_verb(server):
     assert status == 400
 
 
+def test_server_rejects_a_decision_verb_for_the_wrong_subject_type(server):
+    _post(server, "/api/run", {"scenario": "3 · Fraud Ring"})
+    status, data = _post(server, "/api/decide", {
+        "kind": "RING", "id": "RING_001", "action": "APPROVED", "role": "ANALYST"})
+    assert status == 400
+    assert "invalid" in data["error"]
+
+
+def test_server_rejects_a_decision_for_an_unknown_subject(server):
+    _post(server, "/api/run", {"scenario": "1 · Normal Restock"})
+    status, data = _post(server, "/api/decide", {
+        "kind": "PO", "id": "PO_NOT_IN_THIS_RUN", "action": "APPROVED", "role": "OPERATIONS"})
+    assert status == 400
+    assert "invalid" in data["error"]
+
+
 def test_unknown_scenario_is_refused(server):
     status, _ = _post(server, "/api/run", {"scenario": "../../etc/passwd"})
     assert status == 400
