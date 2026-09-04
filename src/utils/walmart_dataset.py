@@ -15,6 +15,21 @@ from pathlib import Path
 
 DEFAULT_DIR = Path(__file__).resolve().parents[2] / "data" / "walmart"
 
+DEPARTMENT_NAMES = {
+    "2": "Specialty Foods", "4": "Bakery", "8": "Seasonal",
+    "9": "Outdoor Living", "13": "Fabrics & Crafts", "23": "Optical",
+    "38": "Jewelry & Accessories", "40": "Pharmacy", "72": "Electronics",
+    "90": "Dairy", "91": "Grocery", "92": "Dry Grocery",
+    "93": "Frozen Foods", "94": "Produce", "95": "Grocery, Snacks & Beverages",
+    "96": "HBA", "97": "Household", "79": "Health & Beauty",
+}
+
+
+def display_name(sku):
+    """Return a business-readable label while retaining the source department ID."""
+    dept = str(sku).replace("DEPT_", "")
+    return f"Department {dept} - {DEPARTMENT_NAMES.get(dept, 'Retail merchandise')}"
+
 
 def available(data_dir=DEFAULT_DIR):
     root = Path(data_dir)
@@ -50,6 +65,7 @@ def load_records(data_dir=DEFAULT_DIR, pair_limit=300, weeks=12):
     sales_raw, inventory_raw = [], []
     for index, ((store, dept), rows) in enumerate(selected, start=1):
         sku = f"DEPT_{dept}"
+        item_name = display_name(f"DEPT_{dept}")
         store_id = f"WALMART_STORE_{store}"
         equivalents = [max(1, round(sales / 100.0)) for _, sales in rows]
         avg = max(1, round(sum(equivalents[-4:]) / min(4, len(equivalents))))
@@ -59,11 +75,13 @@ def load_records(data_dir=DEFAULT_DIR, pair_limit=300, weeks=12):
             sales_raw.append(json.dumps({
                 "record_id": f"WALMART_SALE_{index}_{week[0].strftime('%Y%m%d')}",
                 "sku": sku, "store_id": store_id, "units_sold": units,
+                "item_name": item_name,
                 "unit_price": 100.0, "currency": "USD",
                 "timestamp": week[0].isoformat(),
             }))
         inventory_raw.append(json.dumps({
             "record_id": f"WALMART_INV_{index}", "sku": sku, "store_id": store_id,
+            "item_name": item_name,
             "on_hand": on_hand, "reorder_point": reorder,
             "timestamp": rows[-1][0].isoformat(),
         }))

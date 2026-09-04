@@ -44,6 +44,7 @@ class SalesRecord(BaseModel):
     """A single point-of-sale line item."""
     record_id: str
     sku: str
+    item_name: Optional[str] = None
     store_id: str
     units_sold: int = Field(..., description="Units sold (must be > 0)")
     unit_price: float = Field(..., description="Price per unit at time of sale")
@@ -55,6 +56,7 @@ class InventorySnapshot(BaseModel):
     """On-hand stock for a SKU at a store at a point in time."""
     record_id: str
     sku: str
+    item_name: Optional[str] = None
     store_id: str
     on_hand: int = Field(..., description="Units currently on hand (>= 0)")
     reorder_point: int = Field(..., description="Threshold below which restock is triggered")
@@ -63,6 +65,7 @@ class InventorySnapshot(BaseModel):
 
 class RestockRecommendation(BaseModel):
     sku: str
+    item_name: Optional[str] = None
     store_id: str
     current_on_hand: int
     projected_demand: int

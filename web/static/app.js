@@ -441,8 +441,21 @@ function renderOperations() {
   host.appendChild(el("h3", "section-sub", "Inventory and replenishment"));
   if (ops.stock_alerts.length) {
     const visibleAlerts = ops.stock_alerts.slice(0, 25);
+    const lead = el("div", "replenishment-lead");
+    lead.appendChild(el("div", "eyebrow", "What should be restocked"));
+    lead.appendChild(el("h3", null, `${visibleAlerts.length} replenishment recommendation${visibleAlerts.length === 1 ? "" : "s"}`));
+    lead.appendChild(el("p", "muted", "These are the highest-demand Walmart store/department pairs identified by the Stock-Watcher. The quantity is a recommendation, not an executed order."));
+    const leadList = el("div", "replenishment-list");
+    visibleAlerts.slice(0, 5).forEach((r) => {
+      const item = el("div", "replenishment-item");
+      item.appendChild(el("strong", null, r.item_name || r.sku));
+      item.appendChild(el("span", "muted", `${r.store_id} · order ${Number(r.recommend_order_qty).toLocaleString()} · demand ${Number(r.projected_demand).toLocaleString()}`));
+      leadList.appendChild(item);
+    });
+    lead.appendChild(leadList);
+    host.appendChild(lead);
     host.appendChild(table([
-      { label: "SKU", get: (r) => r.sku },
+      { label: "Item / department", wrap: true, get: (r) => `${r.item_name || r.sku} (${r.sku})` },
       { label: "Store", get: (r) => r.store_id },
       { label: "On hand", num: true, get: (r) => r.on_hand },
       { label: "Projected demand", num: true, get: (r) => r.projected_demand },
@@ -473,7 +486,7 @@ function renderOperations() {
     card.appendChild(head);
     const visibleLines = ops.po.lines.slice(0, 25);
     card.appendChild(table([
-      { label: "SKU", get: (r) => r.sku },
+      { label: "Item / department", wrap: true, get: (r) => `${r.item_name || r.sku} (${r.sku})` },
       { label: "Store", get: (r) => r.store_id },
       { label: "On hand", num: true, get: (r) => r.current_on_hand },
       { label: "Order qty", num: true, get: (r) => r.recommend_order_qty },

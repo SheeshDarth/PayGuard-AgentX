@@ -104,6 +104,7 @@ def stock_watcher(state: dict) -> dict:
             alerts.append({
                 "store_id": inv["store_id"],
                 "sku": inv["sku"],
+                "item_name": inv.get("item_name", inv["sku"]),
                 "on_hand": inv["on_hand"],
                 "projected_demand": demand,
                 "recommend_order_qty": max(needed - inv["on_hand"], 0),
@@ -124,6 +125,7 @@ def ops_planner(state: dict, unit_cost: float = 10.0) -> dict:
         return state
     lines = [{
         "sku": a["sku"],
+        "item_name": a.get("item_name", a["sku"]),
         "store_id": a["store_id"],
         "current_on_hand": a["on_hand"],
         "projected_demand": a["projected_demand"],

@@ -41,6 +41,7 @@ from dashboard.services.workflows import (                                      
     system_status, why_flagged,
 )
 from src.core import audit                                                      # noqa: E402
+from src.utils.walmart_dataset import display_name                              # noqa: E402
 
 STATIC = Path(__file__).resolve().parent / "static"
 MAX_REQUEST_BYTES = 1_048_576
@@ -155,7 +156,14 @@ def run_payload(state, records):
             entry["chain"], entry["closes_cycle"] = chain, closes
         actions.append(entry)
 
+    # Older persisted runs may predate the readable department label. Keep the
+    # public API self-healing so a browser refresh never falls back to DEPT_92.
+    stock_alerts = [{**alert, "item_name": alert.get("item_name") or display_name(alert.get("sku", ""))}
+                    for alert in state.get("stock_alerts", [])]
     po = state.get("po_draft")
+    if po:
+        po = {**po, "lines": [{**line, "item_name": line.get("item_name") or display_name(line.get("sku", ""))}
+                               for line in po.get("lines", [])]}
     flags = [f for f in state.get("payment_flags", []) if f.get("flag_type") != "CLEAN"]
     return {
         "run_id": state.get("run_id"), "preset": state.get("preset"),
@@ -173,7 +181,7 @@ def run_payload(state, records):
             "evidence": len(records["evidence"]),
         },
         "operations": {
-            "stock_alerts": state.get("stock_alerts", []),
+            "stock_alerts": stock_alerts,
             "po": po,
             "po_why": why_flagged(state, "PO", po["po_id"]) if po else None,
             "flags": [{**f, "why": why_flagged(state, "INVOICE", f["invoice_id"])}

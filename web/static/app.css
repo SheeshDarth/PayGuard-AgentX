@@ -549,6 +549,12 @@ details.disclosure[open] > summary::before { transform: rotate(45deg); }
 .flow .loop { color: var(--high); font-weight: 600; }
 
 .network-figure { margin: 1rem 0 0; padding-top: 1rem; border-top: 1px solid var(--border); }
+.replenishment-lead { margin: 0 0 1rem; padding: 1.1rem; border: 1px solid var(--border); border-left: 4px solid var(--primary); border-radius: 12px; background: color-mix(in srgb, var(--surface) 92%, var(--primary) 8%); }
+.replenishment-lead h3 { margin: .25rem 0 .35rem; }
+.replenishment-lead p { margin: 0 0 .8rem; }
+.replenishment-list { display: grid; gap: .45rem; }
+.replenishment-item { display: flex; justify-content: space-between; gap: 1rem; padding: .65rem .75rem; border-radius: 8px; background: var(--surface); border: 1px solid var(--border); }
+@media (max-width: 700px) { .replenishment-item { flex-direction: column; gap: .2rem; } }
 .network-figure svg { display: block; width: 100%; min-height: 220px; background: color-mix(in srgb, var(--surface) 82%, var(--primary) 18%); border: 1px solid var(--border); border-radius: 12px; }
 .graph-edge { stroke: var(--high); stroke-width: 2.5; opacity: .8; }
 .graph-arrow { fill: var(--high); }
