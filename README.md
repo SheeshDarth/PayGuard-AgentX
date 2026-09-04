@@ -6,7 +6,7 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Orchestration: LangGraph](https://img.shields.io/badge/Orchestration-LangGraph-orange.svg)](https://github.com/langchain-ai/langgraph)
 [![LLM: self-hosted (Ollama/vLLM)](https://img.shields.io/badge/LLM-self--hosted%20Ollama%2FvLLM-green.svg)](src/core/llm.py)
-[![Tests: 107 passing](https://img.shields.io/badge/tests-107%20passing-brightgreen.svg)](tests/)
+[![Tests: 115 passing](https://img.shields.io/badge/tests-115%20passing-brightgreen.svg)](tests/)
 [![UI: zero dependencies](https://img.shields.io/badge/UI-HTML%2FCSS%2FJS%20%C2%B7%20no%20framework-blueviolet.svg)](web/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -20,14 +20,14 @@
 
 ## What this is
 
-`PayGuard-AgentX` fuses two ideas into one project:
+`PayGuard-AgentX` is an offline-first enterprise retail control-centre prototype for multi-store, value-retail, large-format, and omnichannel operating models. It fuses two ideas into one project:
 
 - **ShelfSense** — a retail copilot that reads sales + inventory and proposes restock quantities and purchase orders.
 - **PayGuard-AgentX** — a multi-agent financial *data-quality + fraud + dispute* engine.
 
 They meet at one natural loop: the **purchase order → supplier invoice → payment** cycle. ShelfSense decides *what to buy*; PayGuard *guards the data going in and audits the money coming back*. The deterministic PayGuardDQ engine is a **tool the agents call** — not a passive validator — which is what makes the loop genuinely *agentic*.
 
-> **Honest status:** the guarded multi-agent loop runs end-to-end offline with **no GPU, no network, and no API key**. The operator dashboard is hand-written HTML/CSS/JS served by Python's standard-library `http.server` — no web framework, no build step, no CDN, no `npm install` — and separates Action Inbox, Operations, Analyst Workspace, Cases, Evidence, Agent System, and Settings. PostgreSQL/OIDC/live backends are installable paths; SQLite and deterministic fallbacks remain the guaranteed demo path. Nothing here is production-audited and all data is synthetic.
+> **Honest status:** the guarded multi-agent loop runs end-to-end offline with **no GPU, no network, and no API key**. The operator dashboard is hand-written HTML/CSS/JS served by Python's standard-library `http.server` — no web framework, no build step, no CDN, no `npm install` — and separates Action Inbox, Operations, Analyst Workspace, Cases, Evidence, Agent System, and Settings. It includes generic multi-store, Walmart-style, DMart-style, and Target-style operating profiles. Only the explicitly labelled Walmart scenario uses public historical sales; all other profile data is representative. PostgreSQL/OIDC/live backends are installable paths; SQLite and deterministic fallbacks remain the guaranteed demo path. Nothing here is production-audited.
 
 ---
 
@@ -86,6 +86,12 @@ reflection critics, and HITL controller, including each agent's purpose and
 authority boundary. Agents choose a route, call tools, produce evidence-backed
 recommendations, critique drafts, and stop for a human decision; they do not
 authorize payment or supplier submission.
+
+Agents are also organised into governed business teams: **Store Operations**,
+**Procurement Integrity**, **Risk Intelligence**, and **Enterprise Control**.
+Administrators can create custom responsibility teams from the existing agents;
+these teams cannot grant authority or remove human approval. See the
+[Enterprise Prototype Plan](docs/ENTERPRISE_PROTOTYPE_PLAN.md).
 
 See [docs/RUBRIC_TRACEABILITY.md](docs/RUBRIC_TRACEABILITY.md) for the full mapping and [docs/SDG_ALIGNMENT.md](docs/SDG_ALIGNMENT.md) for SDG 16/12/9.
 

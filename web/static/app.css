@@ -662,3 +662,19 @@ pre.json {
 .agent-card h3 { margin: 8px 0; }
 .agent-card p { max-width: 58ch; }
 @media (max-width: 760px) { .agent-grid { grid-template-columns: 1fr; } }
+
+/* Enterprise operating teams make ownership visible above individual agents. */
+.team-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.team-card { min-height: 175px; display: flex; flex-direction: column; align-items: flex-start; }
+.team-card .section-sub { margin: .35rem 0 .55rem; }
+.team-card .chip { margin-top: auto; }
+.enterprise-banner {
+  margin-bottom: 1rem; padding: 1rem 1.15rem; border: 1px solid var(--border);
+  border-left: 4px solid var(--primary); border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--surface) 92%, var(--primary) 8%);
+}
+.enterprise-banner h3 { margin: .25rem 0 .4rem; font-family: var(--serif); }
+.enterprise-banner p { margin: .35rem 0; }
+#settings .panel > .input, #settings .panel > .select { width: 100%; margin: .55rem 0 0; }
+#settings .panel > .btn { margin-top: .7rem; }
+@media (max-width: 760px) { .team-grid { grid-template-columns: 1fr; } }

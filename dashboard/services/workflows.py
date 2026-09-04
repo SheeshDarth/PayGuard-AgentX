@@ -69,6 +69,33 @@ DEMO_SCENARIOS = {
 }
 
 
+# Retailer profiles change the language and operating context of the prototype;
+# they never claim access to a retailer's private systems.  Only Walmart's
+# historical-sales scenario reads a public external dataset.
+RETAILER_PROFILES = {
+    "GENERIC": {
+        "name": "Multi-store retail group",
+        "segment": "General retail",
+        "data_note": "Representative local demo data unless a scenario says otherwise.",
+    },
+    "WALMART": {
+        "name": "Walmart-style large-format retail",
+        "segment": "Large-format retail",
+        "data_note": "The Walmart Historical Sales scenario uses public weekly sales; no private Walmart system is connected.",
+    },
+    "DMART": {
+        "name": "DMart-style value retail",
+        "segment": "Value retail",
+        "data_note": "Representative demo profile only; no DMart data or systems are connected.",
+    },
+    "TARGET": {
+        "name": "Target-style omnichannel retail",
+        "segment": "Omnichannel retail",
+        "data_note": "Representative demo profile only; no Target data or systems are connected.",
+    },
+}
+
+
 def scenario(preset):
     # 1 -- Normal restock: low stock, clean invoice, no fraud signal.
     if preset in ("1 · Normal Restock", "Clean operations run"):
@@ -105,10 +132,14 @@ def scenario(preset):
     return {"sales_raw": [], "inventory_raw": [], "invoices_raw": []}
 
 
-def run_scenario(preset):
+def run_scenario(preset, retailer_profile="GENERIC"):
+    if retailer_profile not in RETAILER_PROFILES:
+        raise ValueError("Unknown retailer profile.")
     state = run_supervised(scenario(preset), memory=seed_regulatory(Memory()))
     state["run_id"] = "RUN_" + uuid.uuid4().hex[:10]
     state["preset"] = preset
+    state["retailer_profile"] = retailer_profile
+    state["retailer_context"] = RETAILER_PROFILES[retailer_profile]
     return state
 
 

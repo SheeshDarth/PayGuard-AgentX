@@ -23,9 +23,10 @@ CREATE TABLE IF NOT EXISTS cases (case_id TEXT PRIMARY KEY, payload TEXT NOT NUL
 CREATE TABLE IF NOT EXISTS alerts (alert_id TEXT PRIMARY KEY, payload TEXT NOT NULL, created_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS evidence (evidence_id TEXT PRIMARY KEY, payload TEXT NOT NULL, created_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS audit_events (event_id TEXT PRIMARY KEY, payload TEXT NOT NULL, created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS agent_teams (team_id TEXT PRIMARY KEY, payload TEXT NOT NULL, created_at TEXT NOT NULL);
 """
 
-TABLES = ("runs", "decisions", "cases", "alerts", "evidence", "audit_events")
+TABLES = ("runs", "decisions", "cases", "alerts", "evidence", "audit_events", "agent_teams")
 
 
 def _now():
@@ -65,6 +66,7 @@ class SQLiteStorage:
     def save_alert(self, alert): self._save("alerts", alert["alert_id"], alert)
     def save_evidence(self, evidence): self._save("evidence", evidence["evidence_id"], evidence)
     def save_audit_event(self, event): self._save("audit_events", event["event_id"], event)
+    def save_team(self, team): self._save("agent_teams", team["team_id"], team)
     def list_runs(self): return self._list("runs")
     def list_decisions(self):
         rows = self.conn.execute("SELECT payload FROM decisions ORDER BY created_at DESC").fetchall()
@@ -73,12 +75,16 @@ class SQLiteStorage:
     def list_alerts(self): return self._list("alerts")
     def list_evidence(self): return self._list("evidence")
     def list_audit_events(self): return self._list("audit_events")
+    def list_teams(self): return self._list("agent_teams")
 
     def reset(self):
         """Clear the demo workspace. Operator decisions are keyed by subject, so a
         re-run of the same scenario reuses subject ids and would otherwise look
-        already-decided; resetting gives a repeatable demo from a clean queue."""
+        already-decided; resetting gives a repeatable demo from a clean queue.
+        Agent teams are workspace configuration, so they remain available."""
         for table in TABLES:
+            if table == "agent_teams":
+                continue
             self.conn.execute(f"DELETE FROM {table}")
         self.conn.commit()
 
@@ -126,6 +132,7 @@ class PostgresStorage:
     def save_alert(self, alert): self._save("alerts", alert["alert_id"], alert)
     def save_evidence(self, evidence): self._save("evidence", evidence["evidence_id"], evidence)
     def save_audit_event(self, event): self._save("audit_events", event["event_id"], event)
+    def save_team(self, team): self._save("agent_teams", team["team_id"], team)
     def save_decision(self, decision):
         data = json.dumps(decision, default=str, sort_keys=True)
         with self.conn.cursor() as cur:
@@ -144,9 +151,12 @@ class PostgresStorage:
             cur.execute("SELECT payload FROM decisions ORDER BY created_at DESC")
             return [json.loads(row[0]) for row in cur.fetchall()]
     def list_audit_events(self): return self._list("audit_events")
+    def list_teams(self): return self._list("agent_teams")
 
     def reset(self):
         with self.conn.cursor() as cur:
             for table in TABLES:
+                if table == "agent_teams":
+                    continue
                 cur.execute(f"DELETE FROM {table}")
         self.conn.commit()

@@ -22,6 +22,7 @@ import json
 import mimetypes
 import sys
 import traceback
+import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -38,21 +39,28 @@ from dashboard.services.session import (                                        
 from dashboard.services.storage import get_storage                              # noqa: E402
 from dashboard.services.workflows import (                                      # noqa: E402
     DEMO_SCENARIOS, agent_timeline, pending_actions, plain_alerts, ring_chain, ring_edges,
-    system_status, why_flagged,
+    RETAILER_PROFILES, system_status, why_flagged,
 )
 from src.core import audit                                                      # noqa: E402
 from src.utils.walmart_dataset import display_name                              # noqa: E402
+from src.agents.teams import default_teams, validate_custom_team                 # noqa: E402
+from src.models.product import AgentTeam                                         # noqa: E402
 
 STATIC = Path(__file__).resolve().parent / "static"
 MAX_REQUEST_BYTES = 1_048_576
 
 PRODUCT = {
     "name": "PayGuard-AgentX",
-    "tagline": "Agentic Retail Operations + Procurement Integrity Copilot",
+    "tagline": "Agentic Enterprise Retail Operations Control Centre",
     "lede": ("AI agents analyze inventory, procurement, invoices, and supplier activity to "
              "recommend operational actions while keeping consequential financial decisions "
              "under human control."),
 }
+
+
+def team_payload(storage):
+    """Built-in responsibility teams plus locally persisted custom teams."""
+    return default_teams() + storage.list_teams()
 
 AGENTS = [
     {"name": "Supervisor", "purpose": "Chooses the smallest route needed for this input.",
@@ -168,6 +176,11 @@ def run_payload(state, records):
     return {
         "run_id": state.get("run_id"), "preset": state.get("preset"),
         "route": state.get("route"), "logs": state.get("logs", []),
+        "enterprise": {
+            "retailer_profile": state.get("retailer_profile", "GENERIC"),
+            "retailer_context": state.get("retailer_context", RETAILER_PROFILES["GENERIC"]),
+            "team_plan": state.get("team_plan", []),
+        },
         "timeline": agent_timeline(state),
         "actions": actions,
         "alerts": _open_alerts(state, records),
@@ -223,6 +236,8 @@ def bootstrap_payload(role=None):
     return {
         "product": PRODUCT,
         "agents": AGENTS,
+        "agent_teams": team_payload(storage),
+        "retailer_profiles": [{"id": key, **value} for key, value in RETAILER_PROFILES.items()],
         "scenarios": [{"id": name, **meta} for name, meta in DEMO_SCENARIOS.items()],
         "status": system_status(storage),
         "user": user.model_dump(),
@@ -327,10 +342,27 @@ class Handler(BaseHTTPRequestHandler):
             scenario = body.get("scenario")
             if scenario not in DEMO_SCENARIOS:
                 return self._send(400, {"error": "Unknown scenario."})
-            state = run_and_save(scenario, storage)
+            retailer_profile = body.get("retailer_profile", "GENERIC")
+            if retailer_profile not in RETAILER_PROFILES:
+                return self._send(400, {"error": "Unknown retailer profile."})
+            state = run_and_save(scenario, storage, retailer_profile=retailer_profile)
             records = latest_records(storage)
             return self._send(200, {"run": run_payload(state, records),
                                     "records": records_payload(records)})
+
+        if path == "/api/teams":
+            user = current_user(body.get("role"))
+            if not can(user, "manage_settings"):
+                return self._send(403, {"error": "Only an administrator can create an agent team."})
+            try:
+                name, mission, agents = validate_custom_team(body.get("name"), body.get("mission"),
+                                                             body.get("agents"))
+            except ValueError as exc:
+                return self._send(400, {"error": str(exc)})
+            team = AgentTeam(team_id="TEAM_CUSTOM_" + uuid.uuid4().hex[:10], name=name,
+                             mission=mission, agents=agents, is_custom=True).model_dump()
+            storage.save_team(team)
+            return self._send(201, {"agent_teams": team_payload(storage)})
 
         if path == "/api/decide":
             state = current_state()

@@ -25,7 +25,7 @@
       </span>
       <div class="brand-text">
         <div class="brand-name">PayGuard<span class="brand-x">-AgentX</span></div>
-        <div class="brand-sub">Procurement integrity</div>
+        <div class="brand-sub">Enterprise control centre</div>
       </div>
     </div>
 
@@ -112,7 +112,7 @@
       <div class="hero-inner">
         <div class="hero-eyebrow">
           <span class="pip" aria-hidden="true"></span>
-          Agentic retail operations &amp; procurement integrity
+          Agentic enterprise retail operations
         </div>
         <h1 class="hero-title">PayGuard<span class="hero-title-x">-AgentX</span></h1>
         <p class="hero-lede" id="hero-lede"></p>
@@ -131,12 +131,16 @@
       <div class="panel-head">
         <div>
           <div class="eyebrow">Demo mode</div>
-          <p class="panel-note">Each scenario runs the same agents on a different demo
-            input — synthetic scenarios or public Walmart history — and the supervisor route changes.</p>
+          <p class="panel-note">Select a retail operating profile, then run a scenario. Agent teams coordinate work while people retain control of consequential decisions.</p>
         </div>
       </div>
       <div class="demo-grid">
         <div class="demo-control">
+          <label class="field-label" for="retailer-profile">Retail operating profile</label>
+          <div class="select-wrap">
+            <select id="retailer-profile" class="select"></select>
+          </div>
+          <p class="scenario-blurb" id="retailer-note"></p>
           <label class="field-label" for="scenario">Scenario</label>
           <div class="select-wrap">
             <select id="scenario" class="select"></select>
@@ -205,7 +209,7 @@
     <section class="view" id="view-agents">
       <div class="view-head">
         <h2 class="view-title">Agent System</h2>
-        <p class="view-note">See which agent does what, what evidence it uses, and where human control begins.</p>
+        <p class="view-note">Business teams coordinate specialist agents; evidence and human control stay visible at every handoff.</p>
       </div>
       <div id="agents"></div>
     </section>

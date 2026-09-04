@@ -22,6 +22,21 @@ class Workspace(BaseModel):
     environment: Literal["DEMO", "PUBLISHED", "OFFLINE"] = "DEMO"
 
 
+class AgentTeam(BaseModel):
+    """A business-facing grouping of existing governed agents.
+
+    Teams describe responsibility and work allocation. They deliberately do not
+    grant an agent extra authority or bypass the approval controller.
+    """
+    team_id: str
+    name: str
+    mission: str
+    agents: list[str] = Field(default_factory=list)
+    workspace_id: str = "demo"
+    is_custom: bool = False
+    created_at: datetime = Field(default_factory=utc_now)
+
+
 class User(BaseModel):
     user_id: str
     display_name: str

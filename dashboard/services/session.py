@@ -33,10 +33,10 @@ def clear_state():
     _LAST_RUN["state"] = None
 
 
-def run_and_save(preset, storage=None):
+def run_and_save(preset, storage=None, retailer_profile="GENERIC"):
     """Execute a scenario and persist everything consequential it produced."""
     storage = storage or get_storage()
-    state = run_scenario(preset)
+    state = run_scenario(preset, retailer_profile=retailer_profile)
     for alert in plain_alerts(state):
         alert["status"] = "OPEN"
         alert["run_id"] = state["run_id"]

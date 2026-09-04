@@ -25,6 +25,7 @@ from src.agents.ring_auditor import ring_auditor
 from src.agents.negotiation import run_negotiation
 from src.agents.critics import run_critics
 from src.agents.hitl import escalate
+from src.agents.teams import team_plan
 
 
 def route(state):
@@ -47,6 +48,7 @@ def route(state):
 def run_supervised(state, memory=None):
     """Execute only the agents the chosen route needs, then critics + HITL."""
     r = route(state)
+    state["team_plan"] = team_plan(r)
     state.setdefault("logs", []).append("Supervisor: route=" + r)
     state = dq_sentinel(state)
     if r in ("restock_only", "full"):

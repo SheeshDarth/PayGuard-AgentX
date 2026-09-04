@@ -361,6 +361,16 @@ async function decide(button, action, verdict) {
 function renderInbox() {
   const host = $("#actions");
   host.replaceChildren();
+  if (state.run?.enterprise) {
+    const enterprise = el("div", "enterprise-banner");
+    const context = state.run.enterprise.retailer_context || {};
+    enterprise.appendChild(el("div", "eyebrow", "Enterprise workspace"));
+    enterprise.appendChild(el("h3", null, context.name || "Retail operating profile"));
+    enterprise.appendChild(el("p", null, context.data_note || ""));
+    const active = (state.run.enterprise.team_plan || []).filter((team) => team.status === "ACTIVE");
+    enterprise.appendChild(el("p", "fine", `Active agent teams: ${active.map((team) => team.name).join(" · ") || "Enterprise Control Team"}`));
+    host.appendChild(enterprise);
+  }
   if (!state.run) {
     host.appendChild(empty("Nothing is waiting",
       "No analysis has been run in this session yet.",
@@ -802,9 +812,11 @@ function renderSettings() {
 
   const workspace = el("div", "panel");
   workspace.appendChild(el("div", "eyebrow", "Workspace"));
-  workspace.appendChild(el("p", null, "Demo workspace"));
+  const profile = state.boot.retailer_profiles.find((item) => item.id === $("#retailer-profile").value)
+    || state.boot.retailer_profiles[0];
+  workspace.appendChild(el("p", null, profile.name));
   workspace.appendChild(el("p", "fine",
-    "All data is synthetic and generated locally by the retail simulator. Nothing here is production data."));
+    profile.data_note));
   host.appendChild(workspace);
 
   const access = el("div", "panel");
@@ -855,6 +867,36 @@ function renderSettings() {
     "Every subsystem above has a tested offline fallback. The demo needs no API key, no GPU, and no network."));
   host.appendChild(runtime);
 
+  const teams = el("div", "panel");
+  teams.appendChild(el("div", "eyebrow", "Custom agent teams"));
+  teams.appendChild(el("p", null,
+    "Build a named team around existing specialists. Teams coordinate responsibility and visibility; they cannot change financial approval rules."));
+  if (state.boot.user.role === "ADMIN") {
+    const name = el("input", "input"); name.placeholder = "Team name, e.g. Freshness Response Team";
+    const mission = el("input", "input"); mission.placeholder = "What this team owns and improves";
+    const agentPicker = el("select", "select"); agentPicker.multiple = true; agentPicker.size = 6;
+    (state.boot.agents || []).forEach((agent) => {
+      const opt = el("option", null, agent.name); opt.value = agent.name; agentPicker.appendChild(opt);
+    });
+    const create = el("button", "btn btn-primary", "Create agent team");
+    create.addEventListener("click", async () => {
+      const agents = [...agentPicker.selectedOptions].map((option) => option.value);
+      create.disabled = true;
+      try {
+        const data = await api("/api/teams", { name: name.value, mission: mission.value, agents,
+          role: state.boot.user.role });
+        state.boot.agent_teams = data.agent_teams;
+        renderAll();
+        toast("Custom agent team created");
+      } catch (err) { toast(err.message); }
+      finally { create.disabled = false; }
+    });
+    teams.append(name, mission, agentPicker, create);
+  } else {
+    teams.appendChild(el("p", "fine", "Switch to the Admin demo role to create a custom team. Published deployments require an administrator identity from OIDC/SSO."));
+  }
+  host.appendChild(teams);
+
   const guard = el("div", "alert alert-warn");
   guard.innerHTML = "<strong>Financial actions stay human-controlled</strong>No payment, supplier submission, or external financial execution is available from this product. Approving an action records a signed decision only.";
   host.appendChild(guard);
@@ -871,6 +913,20 @@ function renderAgents() {
   intro.appendChild(el("p", "fine",
     "Deterministic checks decide what is safe to recommend. Optional LLM hooks explain, negotiate, critique, and draft; they never authorize payment."));
   host.appendChild(intro);
+  const teamGrid = el("div", "team-grid");
+  (state.boot.agent_teams || []).forEach((team) => {
+    const card = el("article", "panel team-card");
+    const plan = state.run?.enterprise?.team_plan?.find((item) => item.team_id === team.team_id);
+    card.appendChild(el("div", "eyebrow", team.is_custom ? "Custom team" : "Operating team"));
+    card.appendChild(el("h3", "section-sub", team.name));
+    card.appendChild(el("p", null, team.mission));
+    card.appendChild(el("p", "fine", `Agents: ${(team.agents || []).join(" · ")}`));
+    if (plan) card.appendChild(el("span", `chip ${plan.status === "ACTIVE" ? "ok" : "plain"}`, plan.status));
+    teamGrid.appendChild(card);
+  });
+  host.appendChild(el("h3", "section-sub", "Enterprise agent teams"));
+  host.appendChild(teamGrid);
+  host.appendChild(el("h3", "section-sub", "Specialist agent catalogue"));
   const grid = el("div", "agent-grid");
   (state.boot.agents || []).forEach((agent, index) => {
     const card = el("article", "panel agent-card");
@@ -916,13 +972,19 @@ function renderScenarioMeta() {
   picked.demonstrates.forEach((d) => list.appendChild(el("li", null, d)));
 }
 
+function renderRetailerMeta() {
+  const picked = state.boot.retailer_profiles.find((item) => item.id === $("#retailer-profile").value);
+  if (picked) $("#retailer-note").textContent = `${picked.name} · ${picked.data_note}`;
+}
+
 async function runDemo() {
   const button = $("#run-demo");
   button.classList.add("is-busy");
   button.disabled = true;
   $("#run-error").hidden = true;
   try {
-    const data = await api("/api/run", { scenario: $("#scenario").value });
+    const data = await api("/api/run", { scenario: $("#scenario").value,
+      retailer_profile: $("#retailer-profile").value });
     state.run = data.run;
     state.records = data.records;
     state.boot.records = data.records;
@@ -1038,12 +1100,19 @@ async function init() {
     picker.appendChild(opt);
   });
   picker.addEventListener("change", renderScenarioMeta);
+  const retailerPicker = $("#retailer-profile");
+  state.boot.retailer_profiles.forEach((profile) => {
+    const opt = el("option", null, profile.name); opt.value = profile.id; retailerPicker.appendChild(opt);
+  });
+  retailerPicker.addEventListener("change", () => { renderRetailerMeta(); renderSettings(); });
   // A run survives a page reload on the server, so point the selector at the
   // scenario actually on screen rather than back at the first one.
   if (state.run && state.boot.scenarios.some((s) => s.id === state.run.preset)) {
     picker.value = state.run.preset;
   }
+  if (state.run?.enterprise?.retailer_profile) retailerPicker.value = state.run.enterprise.retailer_profile;
   renderScenarioMeta();
+  renderRetailerMeta();
   renderAll();
 }
 
