@@ -419,6 +419,13 @@ function renderOperations() {
   }
   const ops = state.run.operations;
 
+  if (state.run.dataset && state.run.dataset.label !== "Synthetic demo data") {
+    const source = el("div", "alert alert-ok");
+    source.appendChild(el("strong", null, state.run.dataset.label));
+    source.appendChild(document.createTextNode(" — " + state.run.dataset.lineage));
+    host.appendChild(source);
+  }
+
   const kpis = el("div", "kpis");
   [["Low-stock items", ops.stock_alerts.length],
    ["Purchase order", ops.po ? "Drafted" : "None"],
@@ -433,6 +440,7 @@ function renderOperations() {
 
   host.appendChild(el("h3", "section-sub", "Inventory and replenishment"));
   if (ops.stock_alerts.length) {
+    const visibleAlerts = ops.stock_alerts.slice(0, 25);
     host.appendChild(table([
       { label: "SKU", get: (r) => r.sku },
       { label: "Store", get: (r) => r.store_id },
@@ -440,7 +448,10 @@ function renderOperations() {
       { label: "Projected demand", num: true, get: (r) => r.projected_demand },
       { label: "Recommended order", num: true, get: (r) => r.recommend_order_qty },
       { label: "Why", wrap: true, get: (r) => r.rationale },
-    ], ops.stock_alerts));
+    ], visibleAlerts));
+    if (ops.stock_alerts.length > visibleAlerts.length) {
+      host.appendChild(el("p", "fine muted", `Showing the 25 highest-demand recommendations of ${ops.stock_alerts.length}. The complete batch remains in the signed PO and raw technical detail.`));
+    }
   } else {
     host.appendChild(empty("Inventory looks healthy",
       "Nothing in this run fell below its reorder point or projected demand."));
@@ -460,13 +471,17 @@ function renderOperations() {
     head.appendChild(left);
     head.appendChild(el("span", "chip medium", "NEEDS HUMAN APPROVAL"));
     card.appendChild(head);
+    const visibleLines = ops.po.lines.slice(0, 25);
     card.appendChild(table([
       { label: "SKU", get: (r) => r.sku },
       { label: "Store", get: (r) => r.store_id },
       { label: "On hand", num: true, get: (r) => r.current_on_hand },
       { label: "Order qty", num: true, get: (r) => r.recommend_order_qty },
       { label: "Rationale", wrap: true, get: (r) => r.rationale },
-    ], ops.po.lines));
+    ], visibleLines));
+    if (ops.po.lines.length > visibleLines.length) {
+      card.appendChild(el("p", "fine muted", `Showing 25 of ${ops.po.lines.length} purchase-order lines in the demo view.`));
+    }
     card.appendChild(disclosure("Why this order was proposed",
       (b) => { b.appendChild(whyPanel(ops.po_why)); }, true));
     card.appendChild(disclosure("Raw purchase order", (b) => b.appendChild(jsonBlock(ops.po))));
@@ -900,7 +915,7 @@ async function runDemo() {
     state.boot.records = data.records;
     renderAll();
     const scenarioId = String(state.boot.scenarios.find((s) => s.id === $("#scenario").value)?.id || "");
-    showView(scenarioId.startsWith("1") ? "operations" : scenarioId.startsWith("3")
+    showView(scenarioId.startsWith("1") || scenarioId.startsWith("5") ? "operations" : scenarioId.startsWith("3")
       ? "analyst" : "inbox");
     toast(`Analysis complete · route ${state.run.route}`);
   } catch (err) {

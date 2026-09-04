@@ -183,6 +183,9 @@ def run_payload(state, records):
             "rejected": state.get("rejected", []),
         },
         "fraud": _fraud_block(state),
+        "dataset": {"label": state.get("dataset_label", "Synthetic demo data"),
+                    "lineage": state.get("data_lineage", "Generated locally by the retail simulator."),
+                    "source_rows": state.get("source_rows")},
     }
 
 
@@ -293,6 +296,11 @@ class Handler(BaseHTTPRequestHandler):
             return self._api_post(path, self._body())
         except Exception as exc:
             traceback.print_exc()          # full detail stays in the log
+            if isinstance(exc, FileNotFoundError):
+                self._send(424, {"error": "The selected dataset is not installed. "
+                                 "Run python scripts\\download_walmart_data.py and try again.",
+                                 "detail": repr(exc)})
+                return
             self._send(500, {"error": "That request could not be completed. The "
                                       "application stays in offline mode and your "
                                       "previous results are unchanged.",

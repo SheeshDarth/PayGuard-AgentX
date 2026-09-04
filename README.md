@@ -267,10 +267,27 @@ shown as **skipped**, never as executed.
 | **2 · Suspicious Invoice** | Invoice validation → PO mismatch **and** duplicate billing → regulatory clause citation → dispute recommendation → human approval | `full` |
 | **3 · Fraud Ring** | Supplier relationships → circular billing + shell-supplier chain → 0–100 fraud score with evidence → human review (and a payroll run that is correctly *not* flagged) | `ring_only` |
 | **4 · Data-Quality Quarantine** | Malformed and checksum-failed records stopped at the gate before any agent reasons over them | `full` |
+| **5 · Walmart Historical Sales** | Public Walmart store/department weekly sales drive demand and a clearly labeled derived stock baseline; real inventory and procurement feeds are not public | `restock_only` |
 
 Every card carries a **Why this was flagged** panel built from the engine's own
 output — deviation percentages, the cited compliance clause, which fraud signals
 fired on which account. Nothing in that panel is generated for display.
+
+### Walmart data demo
+
+The Walmart mode uses the public Walmart Store Sales Forecasting files. Download
+them once with:
+
+```powershell
+python scripts\download_walmart_data.py
+```
+
+Then select **5 · Walmart Historical Sales**. The pipeline reads real weekly
+sales from multiple Walmart stores and departments, converts revenue into a
+transparent sales-equivalent demand measure, derives a demo inventory baseline,
+and produces restock recommendations. Walmart does not publish the internal
+inventory, supplier, invoice, or payment-network data required for the other
+PayGuard controls, so those fraud scenarios remain labeled seeded demonstrations.
 
 ---
 

@@ -13,6 +13,7 @@ from src.agents.orchestrator import run_supervised
 from src.core.memory import Memory
 from src.core.regulatory_seed import seed_regulatory
 from src.utils.retail_simulator import RetailSimulator
+from src.utils.walmart_dataset import load_records as load_walmart_records
 
 
 def _tx(tid, sender, receiver, amount, minute):
@@ -60,6 +61,11 @@ DEMO_SCENARIOS = {
         "demonstrates": ["Schema validation", "Checksum verification", "Quarantine"],
         "route": "full",
     },
+    "5 · Walmart Historical Sales": {
+        "blurb": "Real public Walmart weekly sales across stores and departments. The agent derives a demo stock baseline from recent demand to show what should be replenished.",
+        "demonstrates": ["Real Walmart store history", "Department demand", "Derived stock risk", "Restock recommendation", "Human approval"],
+        "route": "restock_only",
+    },
 }
 
 
@@ -88,6 +94,8 @@ def scenario(preset):
     # 3 -- Fraud ring: the payment graph on its own; the supervisor routes ring_only.
     if preset in ("3 · Fraud Ring", "Fraud-ring investigation"):
         return {"mule_transactions": mule_scenario()}
+    if preset == "5 · Walmart Historical Sales":
+        return load_walmart_records()
     if preset in ("4 · Data-Quality Quarantine", "Data-quality quarantine"):
         return {"sales_raw": [RetailSimulator.sales_record("NEGATIVE_UNITS"),
                               RetailSimulator.sales_record("CORRUPTED_JSON"),

@@ -19,6 +19,9 @@ venv.bak/
 chroma_db/
 .payguard/
 
+# Public Walmart dataset files are downloaded locally, not committed.
+data/walmart/*.csv
+
 # IDEs
 .vscode/
 .idea/
