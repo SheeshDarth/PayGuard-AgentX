@@ -154,6 +154,58 @@ function flowMap(chain, closesCycle) {
   return flow;
 }
 
+function networkGraph(ring) {
+  const figure = el("figure", "network-figure");
+  const caption = el("figcaption", "eyebrow", "Payment relationship graph");
+  figure.appendChild(caption);
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 720 280");
+  svg.setAttribute("role", "img");
+  svg.setAttribute("aria-label", `${ring.pattern_type} network containing ${ring.member_accounts.length} accounts`);
+  const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+  const marker = document.createElementNS("http://www.w3.org/2000/svg", "marker");
+  marker.setAttribute("id", `arrow-${ring.ring_id}`);
+  marker.setAttribute("viewBox", "0 0 10 10");
+  marker.setAttribute("refX", "9"); marker.setAttribute("refY", "5");
+  marker.setAttribute("markerWidth", "6"); marker.setAttribute("markerHeight", "6");
+  marker.setAttribute("orient", "auto-start-reverse");
+  const arrow = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  arrow.setAttribute("d", "M 0 0 L 10 5 L 0 10 z"); arrow.setAttribute("class", "graph-arrow");
+  marker.appendChild(arrow); defs.appendChild(marker); svg.appendChild(defs);
+  const nodes = [...new Set((ring.edges || []).flatMap((e) => [e.sender, e.receiver]).concat(ring.member_accounts || []))];
+  const points = new Map();
+  const cx = 360, cy = 140, radius = Math.min(105, 48 + nodes.length * 9);
+  nodes.forEach((name, i) => {
+    const angle = -Math.PI / 2 + (2 * Math.PI * i / Math.max(nodes.length, 1));
+    points.set(name, [cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius]);
+  });
+  (ring.edges || []).forEach((edge) => {
+    const from = points.get(edge.sender), to = points.get(edge.receiver);
+    if (!from || !to) return;
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    line.setAttribute("x1", from[0]); line.setAttribute("y1", from[1]);
+    line.setAttribute("x2", to[0]); line.setAttribute("y2", to[1]);
+    line.setAttribute("class", "graph-edge"); line.setAttribute("marker-end", `url(#arrow-${ring.ring_id})`);
+    svg.appendChild(line);
+  });
+  points.forEach((point, name) => {
+    const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    circle.setAttribute("cx", point[0]); circle.setAttribute("cy", point[1]); circle.setAttribute("r", "23");
+    circle.setAttribute("class", "graph-node"); group.appendChild(circle);
+    const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    label.setAttribute("x", point[0]); label.setAttribute("y", point[1] + 4);
+    label.setAttribute("text-anchor", "middle"); label.setAttribute("class", "graph-label");
+    label.textContent = name; group.appendChild(label); svg.appendChild(group);
+  });
+  figure.appendChild(svg);
+  const note = el("p", "fine", ring.closes_cycle
+    ? "Arrow direction shows the closed loop back to the originating account."
+    : "Arrow direction shows the pass-through path between accounts and suppliers.");
+  figure.appendChild(note);
+  return figure;
+}
+
 function timelineBlock(steps) {
   const wrap = el("div", "timeline");
   const MARK = { done: "✓", skipped: "–", pending: "⏳" };
@@ -528,6 +580,7 @@ function renderAnalyst() {
     memCol.appendChild(ul);
     grid.appendChild(memCol);
     card.appendChild(grid);
+    card.appendChild(networkGraph(ring));
 
     if (ring.edges.length) {
       card.appendChild(el("div", "eyebrow", "Transactions inside the ring"));
@@ -846,7 +899,9 @@ async function runDemo() {
     state.records = data.records;
     state.boot.records = data.records;
     renderAll();
-    showView("inbox");
+    const scenarioId = String(state.boot.scenarios.find((s) => s.id === $("#scenario").value)?.id || "");
+    showView(scenarioId.startsWith("1") ? "operations" : scenarioId.startsWith("3")
+      ? "analyst" : "inbox");
     toast(`Analysis complete · route ${state.run.route}`);
   } catch (err) {
     const box = $("#run-error");

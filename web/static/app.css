@@ -548,6 +548,13 @@ details.disclosure[open] > summary::before { transform: rotate(45deg); }
 .flow .node { font-weight: 700; color: var(--text); }
 .flow .loop { color: var(--high); font-weight: 600; }
 
+.network-figure { margin: 1rem 0 0; padding-top: 1rem; border-top: 1px solid var(--border); }
+.network-figure svg { display: block; width: 100%; min-height: 220px; background: color-mix(in srgb, var(--surface) 82%, var(--primary) 18%); border: 1px solid var(--border); border-radius: 12px; }
+.graph-edge { stroke: var(--high); stroke-width: 2.5; opacity: .8; }
+.graph-arrow { fill: var(--high); }
+.graph-node { fill: var(--surface); stroke: var(--primary); stroke-width: 3; }
+.graph-label { fill: var(--text); font: 700 13px ui-monospace, SFMono-Regular, Menlo, monospace; }
+
 /* ───────────────────────────── tables ───────────────────────────── */
 .table-wrap {
   overflow-x: auto; border: 1px solid var(--border);
