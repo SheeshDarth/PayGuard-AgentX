@@ -17,6 +17,7 @@ PERMISSIONS = {
     "manage_settings": {"ADMIN"},
     "approve_po": {"ADMIN", "OPERATIONS"},
     "review_fraud": {"ADMIN", "ANALYST"},
+    "manage_cases": {"ADMIN", "OPERATIONS", "ANALYST"},
     "read": set(ROLES),
 }
 
@@ -49,5 +50,6 @@ def capability_matrix():
     return [{"role": role,
              "approve_po": role in PERMISSIONS["approve_po"],
              "review_fraud": role in PERMISSIONS["review_fraud"],
+             "manage_cases": role in PERMISSIONS["manage_cases"],
              "manage_settings": role in PERMISSIONS["manage_settings"]}
             for role in ROLES]

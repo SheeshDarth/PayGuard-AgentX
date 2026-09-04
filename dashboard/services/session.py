@@ -109,6 +109,53 @@ def record_operator_decision(storage, user, subject_kind, subject_id, action, st
     return payload
 
 
+_CASE_TRANSITIONS = {
+    "OPEN": {"OPEN", "INVESTIGATING", "ESCALATED", "RESOLVED", "DISMISSED"},
+    "INVESTIGATING": {"INVESTIGATING", "ESCALATED", "RESOLVED", "DISMISSED"},
+    "ESCALATED": {"ESCALATED", "RESOLVED", "DISMISSED"},
+    "RESOLVED": {"RESOLVED"},
+    "DISMISSED": {"DISMISSED"},
+}
+
+
+def update_case(storage, user, case_id, status=None, note=None, take_ownership=False):
+    """Make an auditable, bounded work-management update to an existing case."""
+    case = next((item for item in storage.list_cases() if item.get("case_id") == case_id), None)
+    if case is None:
+        raise KeyError("Case not found.")
+    old_status = case.get("status", "OPEN")
+    if status is not None:
+        status = str(status).upper()
+        if status not in _CASE_TRANSITIONS.get(old_status, set()):
+            raise ValueError(f"Case cannot move from {old_status} to {status}.")
+        case["status"] = status
+    note = str(note or "").strip()
+    if len(note) > 2000:
+        raise ValueError("Case note must be no more than 2,000 characters.")
+    if take_ownership:
+        case["owner"] = user.display_name
+    if note:
+        stamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        prior = str(case.get("notes") or "").strip()
+        entry = f"[{stamp}] {user.display_name}: {note}"
+        case["notes"] = f"{prior}\n{entry}".strip()
+    case["updated_at"] = datetime.now(timezone.utc).isoformat()
+    storage.save_case(case)
+    update = {"case_id": case_id, "status": case.get("status"), "owner": case.get("owner"),
+              "note_added": bool(note), "actor_id": user.user_id}
+    dossier = audit.build_dossier("DOS_CASE_" + uuid.uuid4().hex[:12], case_id,
+                                  "Case management update", update).model_dump()
+    storage.save_evidence(EvidenceRecord(evidence_id=dossier["dossier_id"], subject_id=case_id,
+                                         evidence_type="Case management update",
+                                         summary=dossier["summary"], verified=True,
+                                         dossier=dossier).model_dump())
+    storage.save_audit_event({"event_id": "EVENT_" + uuid.uuid4().hex[:12],
+                              "event_type": "CASE_UPDATED", "actor_id": user.user_id,
+                              "subject_id": case_id, "status": case.get("status"),
+                              "created_at": datetime.now(timezone.utc).isoformat()})
+    return case
+
+
 def reset(storage):
     storage.reset()
     storage.save_audit_event({"event_id": "EVENT_" + uuid.uuid4().hex[:12],

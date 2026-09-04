@@ -52,9 +52,11 @@ inventory, supplier, invoice, customer, payment, or identity system.
 - Product shell language updated from a single use case to an enterprise control
   centre while retaining the offline-first dashboard.
 
-### Release 2 — Unified operational work management
+### Release 2 — Unified operational work management (in progress)
 
-- Workspace-scoped ownership, case assignment, notes, and saved queue filters.
+- [x] Persistent case ownership, handover notes, valid status transitions, signed
+  update evidence, and audit events.
+- [ ] Workspace-scoped ownership and saved queue filters.
 - Supplier, store, department, and SKU drill-down pages.
 - Workload/aging KPIs and an exception service-level view.
 - Downloadable signed investigation and replenishment reports.

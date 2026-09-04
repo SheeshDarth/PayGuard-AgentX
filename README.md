@@ -6,7 +6,7 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Orchestration: LangGraph](https://img.shields.io/badge/Orchestration-LangGraph-orange.svg)](https://github.com/langchain-ai/langgraph)
 [![LLM: self-hosted (Ollama/vLLM)](https://img.shields.io/badge/LLM-self--hosted%20Ollama%2FvLLM-green.svg)](src/core/llm.py)
-[![Tests: 115 passing](https://img.shields.io/badge/tests-115%20passing-brightgreen.svg)](tests/)
+[![Tests: 117 passing](https://img.shields.io/badge/tests-117%20passing-brightgreen.svg)](tests/)
 [![UI: zero dependencies](https://img.shields.io/badge/UI-HTML%2FCSS%2FJS%20%C2%B7%20no%20framework-blueviolet.svg)](web/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 

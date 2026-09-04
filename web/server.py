@@ -34,7 +34,7 @@ from dashboard.services.auth import ROLES, can, capability_matrix, current_user 
 from dashboard.services.config import load_settings                             # noqa: E402
 from dashboard.services.session import (                                        # noqa: E402
     current_state, latest_records, record_operator_decision, reset as reset_workspace,
-    run_and_save,
+    run_and_save, update_case,
 )
 from dashboard.services.storage import get_storage                              # noqa: E402
 from dashboard.services.workflows import (                                      # noqa: E402
@@ -383,6 +383,20 @@ class Handler(BaseHTTPRequestHandler):
             records = latest_records(storage)
             return self._send(200, {"run": run_payload(state, records),
                                     "records": records_payload(records)})
+
+        if path == "/api/cases":
+            user = current_user(body.get("role"))
+            if not can(user, "manage_cases"):
+                return self._send(403, {"error": f"Role {user.role} cannot update a case."})
+            try:
+                update_case(storage, user, body.get("case_id"), status=body.get("status"),
+                            note=body.get("note"), take_ownership=bool(body.get("take_ownership")))
+            except KeyError as exc:
+                return self._send(404, {"error": str(exc)})
+            except ValueError as exc:
+                return self._send(400, {"error": str(exc)})
+            records = latest_records(storage)
+            return self._send(200, {"records": records_payload(records)})
 
         if path == "/api/verify":
             evidence = next((e for e in latest_records(storage)["evidence"]

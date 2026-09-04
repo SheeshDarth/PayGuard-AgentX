@@ -698,12 +698,55 @@ function renderCases() {
     left.appendChild(el("div", "card-kind", c.title));
     left.appendChild(el("p", "muted", c.summary));
     left.appendChild(el("p", "fine",
-      `${c.case_id} · Status: ${c.status || "OPEN"} · Related: ${(c.related_ids || []).join(", ") || "—"}`));
+      `${c.case_id} · Status: ${c.status || "OPEN"} · Owner: ${c.owner || "Unassigned"} · Related: ${(c.related_ids || []).join(", ") || "—"}`));
     head.appendChild(left);
     head.appendChild(el("span", `chip ${level}`, c.severity || "LOW"));
     card.appendChild(head);
+    const canManage = state.boot.capabilities.find((row) => row.role === state.boot.user.role)?.manage_cases;
+    const work = el("div", "case-work");
+    work.appendChild(el("div", "eyebrow", "Work management"));
+    if (c.notes) work.appendChild(disclosure("Case notes", (body) => body.appendChild(el("pre", "case-notes", c.notes))));
+    if (canManage) {
+      const status = el("select", "select");
+      ["OPEN", "INVESTIGATING", "ESCALATED", "RESOLVED", "DISMISSED"].forEach((item) => {
+        const option = el("option", null, titled(item)); option.value = item;
+        option.selected = item === (c.status || "OPEN"); status.appendChild(option);
+      });
+      const note = el("textarea", "input case-note");
+      note.placeholder = "Add a factual handover, investigation note, or next step…";
+      note.rows = 3;
+      const row = el("div", "btn-row");
+      const own = el("button", "btn", c.owner === state.boot.user.display_name ? "Owned by you" : "Take ownership");
+      const save = el("button", "btn btn-primary", "Save case update");
+      own.disabled = c.owner === state.boot.user.display_name;
+      own.addEventListener("click", () => updateCase(c.case_id, { take_ownership: true }, own));
+      save.addEventListener("click", () => updateCase(c.case_id,
+        { status: status.value, note: note.value, take_ownership: false }, save));
+      row.append(own, save);
+      work.append(status, note, row);
+    } else {
+      work.appendChild(el("p", "fine", "Read-only role. An Operations user, Analyst, or Admin can assign work and record case updates."));
+    }
+    card.appendChild(work);
     host.appendChild(card);
   });
+}
+
+async function updateCase(caseId, change, button) {
+  button.classList.add("is-busy");
+  button.disabled = true;
+  try {
+    const data = await api("/api/cases", { case_id: caseId, role: state.boot.user.role, ...change });
+    state.records = data.records;
+    state.boot.records = data.records;
+    toast("Case update saved and signed");
+    renderAll();
+  } catch (err) {
+    toast(err.message);
+  } finally {
+    button.classList.remove("is-busy");
+    button.disabled = false;
+  }
 }
 
 function renderEvidence() {
@@ -842,6 +885,7 @@ function renderSettings() {
     { label: "Role", get: (r) => r.role },
     { label: "Approve purchase orders", get: (r) => (r.approve_po ? "Yes" : "No") },
     { label: "Review fraud rings", get: (r) => (r.review_fraud ? "Yes" : "No") },
+    { label: "Manage cases", get: (r) => (r.manage_cases ? "Yes" : "No") },
     { label: "Manage settings", get: (r) => (r.manage_settings ? "Yes" : "No") },
   ], state.boot.capabilities));
   access.appendChild(el("p", "fine",

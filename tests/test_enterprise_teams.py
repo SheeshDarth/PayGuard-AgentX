@@ -6,8 +6,10 @@ import urllib.request
 from http.server import ThreadingHTTPServer
 
 from dashboard.services.storage import SQLiteStorage
+from dashboard.services.session import update_case
 from dashboard.services.workflows import RETAILER_PROFILES, run_scenario
 from src.agents.teams import default_teams, team_plan, validate_custom_team
+from src.models.product import Case, User
 from web.server import Handler, bootstrap_payload
 
 
@@ -84,3 +86,27 @@ def test_bootstrap_includes_built_in_agent_teams():
     names = {team["name"] for team in payload["agent_teams"]}
     assert {"Store Operations Team", "Procurement Integrity Team", "Risk Intelligence Team"}.issubset(names)
 
+
+def test_case_work_update_persists_note_owner_and_signed_evidence(tmp_path):
+    storage = SQLiteStorage(str(tmp_path / "cases.sqlite"))
+    storage.save_case(Case(case_id="CASE_1", title="Invoice review", summary="Needs investigation",
+                           severity="HIGH").model_dump())
+    operator = User(user_id="ops-1", display_name="Ava Operations", role="OPERATIONS")
+    updated = update_case(storage, operator, "CASE_1", status="INVESTIGATING",
+                          note="Requested supplier packing evidence.", take_ownership=True)
+    assert updated["status"] == "INVESTIGATING"
+    assert updated["owner"] == "Ava Operations"
+    assert "packing evidence" in updated["notes"]
+    assert storage.list_evidence()[0]["evidence_type"] == "Case management update"
+
+
+def test_case_work_update_rejects_invalid_transition(tmp_path):
+    storage = SQLiteStorage(str(tmp_path / "transitions.sqlite"))
+    storage.save_case(Case(case_id="CASE_2", title="Closed", summary="Done", status="RESOLVED").model_dump())
+    operator = User(user_id="ops-1", display_name="Ava Operations", role="OPERATIONS")
+    try:
+        update_case(storage, operator, "CASE_2", status="INVESTIGATING")
+    except ValueError as error:
+        assert "cannot move" in str(error)
+    else:
+        raise AssertionError("a resolved case must not silently reopen")

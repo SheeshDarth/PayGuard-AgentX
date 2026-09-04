@@ -675,6 +675,10 @@ pre.json {
 }
 .enterprise-banner h3 { margin: .25rem 0 .4rem; font-family: var(--serif); }
 .enterprise-banner p { margin: .35rem 0; }
+.case-work { margin-top: 1rem; padding-top: .9rem; border-top: 1px solid var(--border); }
+.case-work .select, .case-work .case-note { width: 100%; margin: .5rem 0 0; }
+.case-work .btn-row { margin-top: .6rem; }
+.case-notes { margin: .5rem 0 0; white-space: pre-wrap; font: .8rem/1.55 var(--mono); color: var(--text-2); }
 #settings .panel > .input, #settings .panel > .select { width: 100%; margin: .55rem 0 0; }
 #settings .panel > .btn { margin-top: .7rem; }
 @media (max-width: 760px) { .team-grid { grid-template-columns: 1fr; } }
