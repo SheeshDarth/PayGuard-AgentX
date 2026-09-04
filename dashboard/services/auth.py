@@ -31,6 +31,10 @@ def current_user(role=None) -> User:
     settings = load_settings()
     if settings.demo_mode and role in ROLES:
         return User(user_id="demo-operator", display_name="Demo Operator", role=role)
+    if not settings.demo_mode and not settings.oidc_configured:
+        # Fail closed rather than silently treating an environment default as
+        # an authenticated published user.
+        return User(user_id="unauthenticated", display_name="Authentication required", role="VIEWER")
     default = os.getenv("PAYGUARD_DEFAULT_ROLE", "OPERATIONS")
     return User(user_id="operator", display_name="Operator",
                 role=default if default in ROLES else "VIEWER")

@@ -43,6 +43,7 @@ from dashboard.services.workflows import (                                      
 from src.core import audit                                                      # noqa: E402
 
 STATIC = Path(__file__).resolve().parent / "static"
+MAX_REQUEST_BYTES = 1_048_576
 
 PRODUCT = {
     "name": "PayGuard-AgentX",
@@ -51,6 +52,29 @@ PRODUCT = {
              "recommend operational actions while keeping consequential financial decisions "
              "under human control."),
 }
+
+AGENTS = [
+    {"name": "Supervisor", "purpose": "Chooses the smallest route needed for this input.",
+     "type": "Orchestrator", "authority": "Routes only; never approves money."},
+    {"name": "DQ-Sentinel", "purpose": "Rejects malformed, incomplete, or corrupted records before analysis.",
+     "type": "Deterministic", "authority": "Data-quality gate."},
+    {"name": "Demand-Forecaster", "purpose": "Estimates near-term demand for each store and product.",
+     "type": "Analyst", "authority": "Recommendation only."},
+    {"name": "Stock-Watcher", "purpose": "Finds products below reorder point or expected demand.",
+     "type": "Analyst", "authority": "Recommendation only."},
+    {"name": "Ops-Planner", "purpose": "Drafts a replenishment purchase order with rationale and cost.",
+     "type": "Planner", "authority": "Human approval required."},
+    {"name": "Payment-Auditor", "purpose": "Reconciles supplier invoices against purchase orders.",
+     "type": "Auditor", "authority": "Drafts disputes; no payment execution."},
+    {"name": "Regulatory-Auditor", "purpose": "Cites the relevant procurement or compliance clause.",
+     "type": "Knowledge", "authority": "Evidence support only."},
+    {"name": "Ring-Auditor", "purpose": "Detects circular payments and shell-supplier networks.",
+     "type": "Graph analyst", "authority": "Human escalation required."},
+    {"name": "PO / Dispute Critics", "purpose": "Review draft quality before anything reaches a human queue.",
+     "type": "Reflection", "authority": "Can revise drafts; cannot execute."},
+    {"name": "HITL Controller", "purpose": "Holds every consequential action for an operator decision.",
+     "type": "Safety", "authority": "Terminates in signed human disposition."},
+]
 
 
 # --------------------------------------------------------------- payload shaping
@@ -167,12 +191,16 @@ def records_payload(records):
         "alerts": records["alerts"],
         "cases": records["cases"],
         "decisions": records["decisions"],
-        "runs": records["runs"],
+        # The full state is retained server-side for restart recovery, but the
+        # browser only needs run summaries. This keeps payloads bounded and
+        # avoids leaking raw transaction detail into every API response.
+        "runs": [{k: v for k, v in run.items() if k != "state"} for run in records["runs"]],
         "evidence": [{"evidence_id": e["evidence_id"], "subject_id": e["subject_id"],
                       "evidence_type": e["evidence_type"], "summary": e.get("summary", ""),
                       "dossier": e["dossier"],
                       "valid": audit.verify_dossier_dict(e["dossier"])}
                      for e in records["evidence"]],
+        "audit_events": records.get("audit_events", []),
     }
 
 
@@ -183,6 +211,7 @@ def bootstrap_payload(role=None):
     user = current_user(role)
     return {
         "product": PRODUCT,
+        "agents": AGENTS,
         "scenarios": [{"id": name, **meta} for name, meta in DEMO_SCENARIOS.items()],
         "status": system_status(storage),
         "user": user.model_dump(),
@@ -225,6 +254,8 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Security-Policy",
                          "default-src 'self'; img-src 'self' data:; base-uri 'none'")
         self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header("Referrer-Policy", "no-referrer")
         for key, value in (extra or {}).items():
             self.send_header(key, value)
         self.end_headers()
@@ -232,7 +263,12 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.write(raw)
 
     def _body(self):
-        length = int(self.headers.get("Content-Length") or 0)
+        try:
+            length = int(self.headers.get("Content-Length") or 0)
+        except ValueError:
+            raise ValueError("Invalid Content-Length")
+        if length > MAX_REQUEST_BYTES:
+            raise ValueError("Request body is too large")
         if not length:
             return {}
         try:
@@ -312,6 +348,10 @@ class Handler(BaseHTTPRequestHandler):
                                     "dossier": dossier, "tampered": bool(body.get("tamper"))})
 
         if path == "/api/reset":
+            settings = load_settings()
+            user = current_user(body.get("role"))
+            if not settings.demo_mode and not can(user, "manage_settings"):
+                return self._send(403, {"error": "Only an administrator can reset a published workspace."})
             reset_workspace(storage)
             return self._send(200, {"records": records_payload(latest_records(storage)),
                                     "run": None})

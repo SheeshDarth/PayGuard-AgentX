@@ -22,9 +22,10 @@ CREATE TABLE IF NOT EXISTS decisions (decision_id TEXT PRIMARY KEY, subject_kind
 CREATE TABLE IF NOT EXISTS cases (case_id TEXT PRIMARY KEY, payload TEXT NOT NULL, created_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS alerts (alert_id TEXT PRIMARY KEY, payload TEXT NOT NULL, created_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS evidence (evidence_id TEXT PRIMARY KEY, payload TEXT NOT NULL, created_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS audit_events (event_id TEXT PRIMARY KEY, payload TEXT NOT NULL, created_at TEXT NOT NULL);
 """
 
-TABLES = ("runs", "decisions", "cases", "alerts", "evidence")
+TABLES = ("runs", "decisions", "cases", "alerts", "evidence", "audit_events")
 
 
 def _now():
@@ -63,6 +64,7 @@ class SQLiteStorage:
     def save_case(self, case): self._save("cases", case["case_id"], case)
     def save_alert(self, alert): self._save("alerts", alert["alert_id"], alert)
     def save_evidence(self, evidence): self._save("evidence", evidence["evidence_id"], evidence)
+    def save_audit_event(self, event): self._save("audit_events", event["event_id"], event)
     def list_runs(self): return self._list("runs")
     def list_decisions(self):
         rows = self.conn.execute("SELECT payload FROM decisions ORDER BY created_at DESC").fetchall()
@@ -70,6 +72,7 @@ class SQLiteStorage:
     def list_cases(self): return self._list("cases")
     def list_alerts(self): return self._list("alerts")
     def list_evidence(self): return self._list("evidence")
+    def list_audit_events(self): return self._list("audit_events")
 
     def reset(self):
         """Clear the demo workspace. Operator decisions are keyed by subject, so a
@@ -122,6 +125,7 @@ class PostgresStorage:
     def save_case(self, case): self._save("cases", case["case_id"], case)
     def save_alert(self, alert): self._save("alerts", alert["alert_id"], alert)
     def save_evidence(self, evidence): self._save("evidence", evidence["evidence_id"], evidence)
+    def save_audit_event(self, event): self._save("audit_events", event["event_id"], event)
     def save_decision(self, decision):
         data = json.dumps(decision, default=str, sort_keys=True)
         with self.conn.cursor() as cur:
@@ -139,6 +143,7 @@ class PostgresStorage:
         with self.conn.cursor() as cur:
             cur.execute("SELECT payload FROM decisions ORDER BY created_at DESC")
             return [json.loads(row[0]) for row in cur.fetchall()]
+    def list_audit_events(self): return self._list("audit_events")
 
     def reset(self):
         with self.conn.cursor() as cur:

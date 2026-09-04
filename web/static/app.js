@@ -779,6 +779,30 @@ function renderSettings() {
   host.appendChild(guard);
 }
 
+function renderAgents() {
+  const host = $("#agents");
+  if (!host) return;
+  host.replaceChildren();
+  const intro = el("div", "panel");
+  intro.appendChild(el("div", "eyebrow", "How this is agentic"));
+  intro.appendChild(el("p", null,
+    "The supervisor selects a route, specialized agents transform evidence, critics review drafts, and the HITL controller stops consequential actions for a human decision."));
+  intro.appendChild(el("p", "fine",
+    "Deterministic checks decide what is safe to recommend. Optional LLM hooks explain, negotiate, critique, and draft; they never authorize payment."));
+  host.appendChild(intro);
+  const grid = el("div", "agent-grid");
+  (state.boot.agents || []).forEach((agent, index) => {
+    const card = el("article", "panel agent-card");
+    card.appendChild(el("div", "agent-number", String(index + 1).padStart(2, "0")));
+    card.appendChild(el("h3", "section-sub", agent.name));
+    card.appendChild(el("div", "chip low", agent.type));
+    card.appendChild(el("p", null, agent.purpose));
+    card.appendChild(el("p", "fine", agent.authority));
+    grid.appendChild(card);
+  });
+  host.appendChild(grid);
+}
+
 /* ───────────────────────────── orchestration ───────────────────────────── */
 function renderAll() {
   renderStatus();
@@ -789,6 +813,7 @@ function renderAll() {
   renderCases();
   renderEvidence();
   renderSettings();
+  renderAgents();
   $("#who-name").textContent = state.boot.user.display_name;
   $("#who-role").textContent = state.boot.user.role;
 }
@@ -839,7 +864,7 @@ async function resetDemo() {
   const button = $("#reset-demo");
   button.classList.add("is-busy");
   try {
-    const data = await api("/api/reset", {});
+    const data = await api("/api/reset", { role: state.boot.user.role });
     state.run = null;
     state.records = data.records;
     state.boot.records = data.records;

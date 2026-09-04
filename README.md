@@ -6,7 +6,7 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Orchestration: LangGraph](https://img.shields.io/badge/Orchestration-LangGraph-orange.svg)](https://github.com/langchain-ai/langgraph)
 [![LLM: self-hosted (Ollama/vLLM)](https://img.shields.io/badge/LLM-self--hosted%20Ollama%2FvLLM-green.svg)](src/core/llm.py)
-[![Tests: 103 passing](https://img.shields.io/badge/tests-103%20passing-brightgreen.svg)](tests/)
+[![Tests: 107 passing](https://img.shields.io/badge/tests-107%20passing-brightgreen.svg)](tests/)
 [![UI: zero dependencies](https://img.shields.io/badge/UI-HTML%2FCSS%2FJS%20%C2%B7%20no%20framework-blueviolet.svg)](web/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -27,7 +27,7 @@
 
 They meet at one natural loop: the **purchase order → supplier invoice → payment** cycle. ShelfSense decides *what to buy*; PayGuard *guards the data going in and audits the money coming back*. The deterministic PayGuardDQ engine is a **tool the agents call** — not a passive validator — which is what makes the loop genuinely *agentic*.
 
-> **Honest status:** the guarded multi-agent loop runs end-to-end offline with **no GPU, no network, and no API key**. The operator dashboard is hand-written HTML/CSS/JS served by Python's standard-library `http.server` — no web framework, no build step, no CDN, no `npm install` — and separates Action Inbox, Operations, Analyst Workspace, Cases, Evidence, and Settings. PostgreSQL/OIDC/live backends are installable paths; SQLite and deterministic fallbacks remain the guaranteed demo path. Nothing here is production-audited and all data is synthetic.
+> **Honest status:** the guarded multi-agent loop runs end-to-end offline with **no GPU, no network, and no API key**. The operator dashboard is hand-written HTML/CSS/JS served by Python's standard-library `http.server` — no web framework, no build step, no CDN, no `npm install` — and separates Action Inbox, Operations, Analyst Workspace, Cases, Evidence, Agent System, and Settings. PostgreSQL/OIDC/live backends are installable paths; SQLite and deterministic fallbacks remain the guaranteed demo path. Nothing here is production-audited and all data is synthetic.
 
 ---
 
@@ -79,6 +79,13 @@ decision only.
 | **Multi-agent** | 7 agents + PO/Dispute critics | [`agents/`](src/agents/) |
 | **Feedback loops** | Reflection critics · Demand↔Stock negotiation · human-only HITL | [`critics.py`](src/agents/critics.py), [`negotiation.py`](src/agents/negotiation.py), [`hitl.py`](src/agents/hitl.py) |
 | **Network-level fraud** | Money-muling graph scan — circular billing (cycles), invoice structuring (smurfing), shell suppliers — with multi-signal 0–100 scoring, false-positive suppression, and a Cypher knowledge-graph artifact | [`src/core/mule/`](src/core/mule/) |
+
+The **Agent System** screen makes the agentic design visible without requiring a
+reader to inspect source code. It shows the supervisor, specialist agents,
+reflection critics, and HITL controller, including each agent's purpose and
+authority boundary. Agents choose a route, call tools, produce evidence-backed
+recommendations, critique drafts, and stop for a human decision; they do not
+authorize payment or supplier submission.
 
 See [docs/RUBRIC_TRACEABILITY.md](docs/RUBRIC_TRACEABILITY.md) for the full mapping and [docs/SDG_ALIGNMENT.md](docs/SDG_ALIGNMENT.md) for SDG 16/12/9.
 
@@ -161,7 +168,7 @@ Terminal demo — the whole supervised pipeline, no browser:
 python main.py
 ```
 
-Full test suite (103 tests, ~5 seconds):
+Full test suite (107 tests, ~5 seconds):
 
 ```bash
 pytest -q
@@ -175,7 +182,7 @@ python evaluation/run_eval.py
 
 ### Verify the install
 
-A healthy setup prints `103 passed` from `pytest -q`, and `python main.py` ends
+A healthy setup prints `107 passed` from `pytest -q`, and `python main.py` ends
 with `Done. Deterministic run -- no LLM, GPU or network required.` In the
 dashboard, the sidebar **System status** should show seven ticks with
 `LLM: offline stub` and `Mode: Demo`.

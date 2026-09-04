@@ -7,6 +7,8 @@ boundary.
 
 from dashboard.services.storage import get_storage
 from dashboard.services.workflows import plain_alerts, run_scenario
+from datetime import datetime, timezone
+import uuid
 from src.core import audit
 from src.models.product import Case, EvidenceRecord, RunSummary
 
@@ -15,6 +17,10 @@ _LAST_RUN = {"state": None}
 
 
 def current_state():
+    if _LAST_RUN["state"] is None:
+        records = latest_records(get_storage())
+        if records["runs"]:
+            _LAST_RUN["state"] = records["runs"][0].get("state")
     return _LAST_RUN["state"]
 
 
@@ -43,18 +49,24 @@ def run_and_save(preset, storage=None):
             evidence_id=dossier["dossier_id"], subject_id=dossier.get("subject_id", ""),
             evidence_type="Pipeline evidence", summary=dossier.get("summary", ""),
             verified=True, dossier=dossier).model_dump())
-    storage.save_run(state["run_id"], RunSummary(
+    summary = RunSummary(
         run_id=state["run_id"], route=state.get("route", "noop"), preset=preset,
         rejected_count=len(state.get("rejected", [])),
         alert_count=len(plain_alerts(state)),
-        ring_count=len(state.get("mule_rings", []))).model_dump())
+        ring_count=len(state.get("mule_rings", []))).model_dump()
+    summary["state"] = state
+    storage.save_run(state["run_id"], summary)
+    storage.save_audit_event({"event_id": "EVENT_" + uuid.uuid4().hex[:12],
+                              "event_type": "RUN_COMPLETED", "actor_id": "system",
+                              "subject_id": state["run_id"],
+                              "created_at": datetime.now(timezone.utc).isoformat()})
     return set_state(state)
 
 
 def latest_records(storage):
     return {"runs": storage.list_runs(), "alerts": storage.list_alerts(),
             "cases": storage.list_cases(), "decisions": storage.list_decisions(),
-            "evidence": storage.list_evidence()}
+            "evidence": storage.list_evidence(), "audit_events": storage.list_audit_events()}
 
 
 def record_operator_decision(storage, user, subject_kind, subject_id, action, state=None):
@@ -71,6 +83,10 @@ def record_operator_decision(storage, user, subject_kind, subject_id, action, st
         evidence_id=dossier["dossier_id"], subject_id=subject_id,
         evidence_type="Operator decision", summary=dossier["summary"],
         verified=True, dossier=dossier).model_dump())
+    storage.save_audit_event({"event_id": "EVENT_" + uuid.uuid4().hex[:12],
+                              "event_type": "OPERATOR_DECISION", "actor_id": user.user_id,
+                              "subject_id": subject_id, "action": action,
+                              "created_at": datetime.now(timezone.utc).isoformat()})
     if state is not None:
         if subject_kind == "PO" and state.get("po_draft", {}).get("po_id") == subject_id:
             state["po_draft"]["status"] = action
@@ -86,9 +102,16 @@ def record_operator_decision(storage, user, subject_kind, subject_id, action, st
             case["status"] = "ESCALATED" if action == "ESCALATED" else (
                 "DISMISSED" if action == "DISMISSED" else "RESOLVED")
             storage.save_case(case)
+    if state is not None and state.get("run_id"):
+        prior = next((run for run in storage.list_runs() if run.get("run_id") == state["run_id"]), {})
+        prior["state"] = state
+        storage.save_run(state["run_id"], prior)
     return payload
 
 
 def reset(storage):
     storage.reset()
+    storage.save_audit_event({"event_id": "EVENT_" + uuid.uuid4().hex[:12],
+                              "event_type": "WORKSPACE_RESET", "actor_id": "operator",
+                              "subject_id": "workspace", "created_at": datetime.now(timezone.utc).isoformat()})
     clear_state()

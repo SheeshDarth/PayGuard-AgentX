@@ -12,7 +12,9 @@ from dashboard.services.workflows import (
     DEMO_SCENARIOS, agent_timeline, pending_actions, ring_chain, ring_edges, run_scenario,
     system_status, why_flagged,
 )
-from web.server import Handler, run_payload
+from web.server import Handler, bootstrap_payload, run_payload
+from dashboard.services import session
+from dashboard.services.storage import SQLiteStorage
 
 
 # ----------------------------------------------------------------- derivations
@@ -100,6 +102,22 @@ def test_run_payload_is_json_serialisable():
     state = run_scenario("2 · Suspicious Invoice")
     records = {"alerts": [], "cases": [], "decisions": [], "evidence": [], "runs": []}
     json.dumps(run_payload(state, records), default=str)
+
+
+def test_bootstrap_exposes_the_agent_catalog():
+    payload = bootstrap_payload("OPERATIONS")
+    names = {agent["name"] for agent in payload["agents"]}
+    assert {"Supervisor", "DQ-Sentinel", "Ops-Planner", "Ring-Auditor", "HITL Controller"}.issubset(names)
+
+
+def test_latest_run_state_restores_from_sqlite_after_memory_clear(tmp_path, monkeypatch):
+    monkeypatch.setenv("PAYGUARD_SQLITE_PATH", str(tmp_path / "restore.sqlite"))
+    storage = SQLiteStorage(str(tmp_path / "restore.sqlite"))
+    state = session.run_and_save("1 · Normal Restock", storage)
+    session.clear_state()
+    restored = session.current_state()
+    assert restored["run_id"] == state["run_id"]
+    session.clear_state()
 
 
 # ----------------------------------------------------------------- authorization

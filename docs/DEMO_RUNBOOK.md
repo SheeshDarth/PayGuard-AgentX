@@ -37,7 +37,10 @@ the Python standard library: nothing to install, nothing to build, no network.
 3. **Action Inbox**: a HIGH invoice dispute (supplier, amount, confidence) and a
    MEDIUM restock purchase order. Expand **Why this was flagged** — the 487% PO
    deviation, the duplicate billing, and the cited clause `REG_PO_MATCH`.
-4. **Agent execution**: all ten agents ran on route `full`.
+4. **Agent System**: open this page and explain the ten visible roles. The
+   supervisor selects the route, specialist agents call deterministic tools,
+   critics review drafts, and the HITL controller stops consequential actions.
+   Emphasize that approval records a signed human decision only.
 5. **Operations**: low stock, the drafted order and its rationale, the invoice
    checks, and the records quarantined at the gate.
 6. Back in **Action Inbox**, **Approve** one item. The decision is signed and the
@@ -51,6 +54,10 @@ the Python standard library: nothing to install, nothing to build, no network.
    **Demo: tamper with payload** to show verification flip to INVALID.
 10. **Settings**: switch the demo role to `VIEWER` and show the decision buttons
     disable — the server rejects the call too, not just the browser.
+
+11. **Persistence check**: decide one item, refresh the page, and reopen the
+    Action Inbox. The decision and audit event remain because the workspace is
+    stored in SQLite rather than only in browser/session memory.
 
 Select **Reset** to return any scenario to a clean queue.
 

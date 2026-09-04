@@ -13,6 +13,15 @@ class Settings:
     database_url: str
     sqlite_path: str
     demo_mode: bool
+    oidc_client_id: str
+    oidc_client_secret: str
+    oidc_discovery_url: str
+    oidc_redirect_uri: str
+
+    @property
+    def oidc_configured(self):
+        return all((self.oidc_client_id, self.oidc_client_secret,
+                    self.oidc_discovery_url, self.oidc_redirect_uri))
 
 
 def load_settings() -> Settings:
@@ -33,4 +42,8 @@ def load_settings() -> Settings:
     return Settings(key, backend, os.getenv("PAYGUARD_LLM_MODEL", ""),
                     os.getenv("PAYGUARD_DATABASE_URL", ""),
                     os.getenv("PAYGUARD_SQLITE_PATH", ".payguard/workspace.sqlite"),
-                    os.getenv("PAYGUARD_DEMO_MODE", "true").lower() == "true")
+                    os.getenv("PAYGUARD_DEMO_MODE", "true").lower() == "true",
+                    os.getenv("PAYGUARD_OIDC_CLIENT_ID", ""),
+                    os.getenv("PAYGUARD_OIDC_CLIENT_SECRET", ""),
+                    os.getenv("PAYGUARD_OIDC_DISCOVERY_URL", ""),
+                    os.getenv("PAYGUARD_OIDC_REDIRECT_URI", ""))

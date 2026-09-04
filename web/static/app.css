@@ -642,3 +642,10 @@ pre.json {
     transition-duration: .001ms !important;
   }
 }
+/* Agent catalog: make the agentic architecture understandable without raw logs. */
+.agent-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.agent-card { position: relative; min-height: 150px; }
+.agent-number { color: var(--primary); font-family: var(--mono); font-size: .75rem; letter-spacing: .08em; }
+.agent-card h3 { margin: 8px 0; }
+.agent-card p { max-width: 58ch; }
+@media (max-width: 760px) { .agent-grid { grid-template-columns: 1fr; } }
